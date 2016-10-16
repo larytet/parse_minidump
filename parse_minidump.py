@@ -70,9 +70,9 @@ def data_to_hex(data):
 def data_to_ascii(data):
     s = ""
     for b in data:
-        if (b >= 0x20) and (b <= 0x7e)
+        if (b >= 0x20) and (b <= 0x7e):
             s =  s + b
-        else
+        else:
             s = s + "."
     return s
         
@@ -83,12 +83,12 @@ def get_bits(value, start, bits):
     return value
 
 class DataField:
-    __init__(self, name, size):
+    def __init__(self, name, size):
         self.name = name
         self.size = size
         self.is_struct = False
 
-    __init__(self, name, size, data_struct):
+    def __init__(self, name, size, data_struct):
         self.name = name
         self.size = size
         self.data_struct = data_struct
@@ -103,7 +103,7 @@ PHYSICAL_MEMORY_RUN32_STRUCT = (
 PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT = (
     DataField("NumberOfRuns", 4),
     DataField("NumberOfPages", 4),
-    DataField"Run", 256, PHYSICAL_MEMORY_RUN32_STRUCT);
+    DataField("Run", 256, PHYSICAL_MEMORY_RUN32_STRUCT);
 );
 
      
