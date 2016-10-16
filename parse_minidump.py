@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # Get a recorded PCAP file, assume that payload is 16 bits RGB565, save the payload to the PNG image file
 # Data can come from OV7691
-from symbol import argument
 '''
 Usage:
     parse_minidump.py parse --filein=FILENAME 
@@ -152,7 +151,7 @@ HEADER64_STRUCT = (
     DataField("BugCheckParameter", 4*8),
     DataField("Skip", 0x80),
     DataField("KdDebuggerDataBlock", 8),
-    DataField("PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT)
+    DataField("PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT),
     DataField("Skip", 0xf00),
     # size is 0x2000 bytes 
 );
@@ -166,10 +165,11 @@ def parse_field(file, data_field):
     data = read_field(file, data_field.size)
     value = data_to_hex(data)
     (contains_ascii, value_ascii) = data_to_ascii(data)
-    if (contains_ascii):
-        logger.info("{3}:{0} = {1} ({2})".format(data_field.name, value, value_ascii, hex(file_offset)))
-    else:
-        logger.info("{2}:{0} = {1}".format(data_field.name, value, hex(file_offset)))
+    if (data_field.name != "Skip"):
+        if (contains_ascii):
+            logger.info("{3}:{0} = {1} ({2})".format(data_field.name, value, value_ascii, hex(file_offset)))
+        else:
+            logger.info("{2}:{0} = {1}".format(data_field.name, value, hex(file_offset)))
         
     return (value, contains_ascii, value_ascii)
 
@@ -184,8 +184,6 @@ def parse_dump_header_physical_blocks_32(arguments, file_dump):
 
 def parse_dump_header_64(arguments, file_dump):
     logger.info("64bits dump")
-    if (data_field.name == "PhysicalMemoryBlock"):
-        parse_dump_header_physical_blocks(arguments, file_dump)
     for data_field in HEADER64_STRUCT:
         if (data_field.name == "MajorVersion"):
             break
@@ -200,7 +198,6 @@ def parse_dump_header_64(arguments, file_dump):
 def parse_dump_header_32(arguments, file_dump):
     logger.info("32bits dump")
     for data_field in HEADER32_STRUCT:
-    for data_field in HEADER64_STRUCT:
         if (data_field.name == "MajorVersion"):
             break
         
@@ -210,6 +207,7 @@ def parse_dump_header_32(arguments, file_dump):
         else:
             if (data_field.name == "PhysicalMemoryBlock"):
                 parse_dump_header_physical_blocks_32(arguments, file_dump)
+
 
 def parse_dump_header(arguments, file_dump):
     dump_type_64 = None
@@ -222,10 +220,6 @@ def parse_dump_header(arguments, file_dump):
                     break
             if (data_field.name == "ValidDump"):
                 dump_type_64 = (value_ascii == "DU64") 
-                    
-                if dump_type_64:
-                else:
-                    logger.info("32bits dump")
                     
         if (dump_type_64):
             parse_dump_header_64(arguments, file_dump)
