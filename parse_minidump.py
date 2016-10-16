@@ -68,7 +68,8 @@ def data_to_ascii(data):
     s = ""
     contains_ascii = False
     for b in data:
-        if (b >= 0x20) and (b <= 0x7e):
+        b_ascii = ord(b)
+        if (b_ascii >= 0x20) and (b_ascii <= 0x7e):
             s =  s + b
             contains_ascii = True
         else:
