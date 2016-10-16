@@ -244,67 +244,6 @@ def parse_field(file, data_field):
         
     return (data, data_hex, contains_ascii, value_ascii)
 
-def parse_dump_header_physical_blocks_64(arguments, file_dump):
-    number_of_runs = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0])
-    number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[1])
-
-def parse_dump_header_physical_blocks_32(arguments, file_dump):
-    number_of_runs = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT[0])
-    number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT[1])
-
-
-def parse_dump_header_64(arguments, file_dump):
-    logger.info("64bits dump")
-    skip = True
-        
-    for data_field in HEADER64_STRUCT:
-        if (data_field.name == "MajorVersion"):
-            skip = False
-        if skip:
-            continue
-        if (not data_field.is_struct):
-            (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
-        else:
-            if (data_field.name == "PhysicalMemoryBlock"):
-                parse_dump_header_physical_blocks_64(arguments, file_dump)
-    
-def parse_dump_header_32(arguments, file_dump):
-    logger.info("32bits dump")
-    skip = True
-    for data_field in HEADER64_STRUCT:
-        if (data_field.name == "MajorVersion"):
-            skip = False
-        if skip:
-            continue
-        if (not data_field.is_struct):
-            (value, value_hex, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
-        else:
-            if (data_field.name == "PhysicalMemoryBlock"):
-                parse_dump_header_physical_blocks_32(arguments, file_dump)
-
-
-def parse_dump_header(arguments, file_dump):
-    dump_type_64 = None
-    for data_field in HEADER32_STRUCT:
-        if (not data_field.is_struct):
-            (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
-            if (data_field.name == "Signature"):
-                if (value_ascii != "PAGE"):
-                    logger.error("Failed to parse header in the file '{0}' - no signature. {1} instead of expected {2}".format(filename_in, value_ascii, "PAGE"))
-                    break
-            if (data_field.name == "ValidDump"):
-                dump_type_64 = (value_ascii == "DU64") 
-                if (dump_type_64):
-                    parse_dump_header_64(arguments, file_dump)
-                else:
-                    parse_dump_header_32(arguments, file_dump)
-            
-                break
-            
-            
-    return dump_type_64
-                                     
-                
 def parse_minidump(arguments):
     filename_in = arguments["--filein"]
     logger.info("Parse file '{0}'".format(filename_in))
