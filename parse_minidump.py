@@ -82,6 +82,15 @@ def get_bits(value, start, bits):
     value = value & mask
     return value
 
+def get_int(data):
+    if (len(data) == 4):
+        return struct.unpack("<I", data)[0]
+    if (len(data) == 8):
+        return struct.unpack("<Q", data)[0]
+    else:
+        logger.error("Failed to convert data {0} bytes".format(len(data)))
+        return -1;
+
 class DataField:
     def __init__(self, name, size, data_struct = None):
         self.name = name
