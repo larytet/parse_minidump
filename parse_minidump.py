@@ -128,19 +128,37 @@ def read_field(file, size):
     data = file.read(size)
     return data
 
-def print_field(data_field, data):
+def parse_field(data_field, data):
     value = data_to_hex(data)
     (contains_ascii, value_ascii) = data_to_ascii(data)
     if (contains_ascii):
         logger.info("{0} = {1} ({2})".format(data_field.name, value, value_ascii))
     else:
         logger.info("{0} = {1}".format(data_field.name, value))
+        
+    return (value, contains_ascii, value_ascii)
 
 def parse_dump_header(arguments, file_dump):
+    dump_type_64 = None
     for data_field in HEADER_STRUCT:
         if (not data_field.is_struct):
             data = read_field(file_dump, data_field.size)
-            print_field(data_field, data)
+            (value, contains_ascii, value_ascii) = parse_field(data_field, data)
+            if (data_field.name == "Signature"):
+                if (value_ascii != "PAGE"):
+                    logger.error("Failed to parse header in the file '{0}' - no signature. {1} instead of expected {2}".format(filename_in, value_ascii, "PAGE"))
+                    break
+            if (data_field.name == "ValidDump"):
+                dump_type_64 = (value_ascii == "DU64") 
+                    
+                if dump_type_64:
+                    logger.info("64bits dump")
+                else:
+                    logger.info("32bits dump")
+    return dump_type_64
+                 
+                    
+                
 
 def parse_dump(arguments):
     filename_in = arguments["--filein"]
