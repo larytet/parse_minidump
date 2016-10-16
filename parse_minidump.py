@@ -103,7 +103,7 @@ PHYSICAL_MEMORY_RUN32_STRUCT = (
 PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT = (
     DataField("NumberOfRuns", 4),
     DataField("NumberOfPages", 4),
-    DataField("Run", 256, PHYSICAL_MEMORY_RUN32_STRUCT);
+    DataField("Run", 256, PHYSICAL_MEMORY_RUN32_STRUCT)
 );
 
      
@@ -125,7 +125,7 @@ HEADER_STRUCT = (
     DataField("KdSecondaryVersion", 1),
     DataField("Spare", 32),
     DataField("KdDebuggerDataBlock", 32),
-    DataField"PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT);
+    DataField("PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT)
     # size is 0x1000 bytes
 );
 
