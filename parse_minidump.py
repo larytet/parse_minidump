@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Get a recorded PCAP file, assume that payload is 16 bits RGB565, save the payload to the PNG image file
 # Data can come from OV7691
+from collections import namedtuple
 '''
 Usage:
     parse_minidump.py parse --filein=FILENAME 
@@ -20,6 +21,7 @@ import struct
 import time
 from datetime import datetime
 import subprocess
+import collections.namedtuple
 
 
 try:
@@ -64,13 +66,67 @@ def get_bits(value, start, bits):
     value = value & mask
     return value
 
+class DataField:
+    __init__(self, name, size):
+        self.name = name
+        self.size = size
+        self.is_struct = False
+
+    __init__(self, name, size, data_struct):
+        self.name = name
+        self.size = size
+        self.data_struct = data_struct
+        self.is_struct = True
+
+PHYSICAL_MEMORY_RUN32_STRUCT = (
+    DataField("BasePage", 4),
+    DataField("PageCount", 4),
+);
+
+
+PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT = (
+    DataField("NumberOfRuns", 4),
+    DataField("NumberOfPages", 4),
+    DataField"Run", 256, PHYSICAL_MEMORY_RUN32_STRUCT);
+);
+
+     
+HEADER_STRUCT = (
+    DataField("Signature", 4),
+    DataField("ValidDump", 4),
+    DataField("MajorVersion", 4),
+    DataField("MinorVersion", 4),
+    DataField("DirectoryTableBase", 4),
+    DataField("PfnDataBase", 4), 
+    DataField("PsLoadedModuleList", 4),
+    DataField("PsActiveProcessHead", 4),
+    DataField("MachineImageType", 4),
+    DataField("NumberProcessors", 4),
+    DataField("BugCheckCode", 4),
+    DataField("BugCheckParameter", 16),
+    DataField("VersionUser", 32),
+    DataField("PaeEnabled", 1),
+    DataField("KdSecondaryVersion", 1),
+    DataField("Spare", 32),
+    DataField("KdDebuggerDataBlock", 32),
+    DataField"PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT);
+    # size is 0x1000 bytes
+);
+
+def parse_dump_header(arguments, file_dump):
+
 def parse_dump(arguments):
+    filename_in = arguments["--filein"]
+    logger.info("Parse file '{0}'".format(filename_in))
     while True:
-        filename_in = arguments["--filein"]
         (result, file_dump) = open_file(filename_in, 'rb')
         if not result:
             logger.error("Failed to open file '{0}' for reading".format(filename_in))
             break
+        parse_dump_header(arguments, file_dump)
+        
+        file_dump.close()
+        break
 
 
 if __name__ == '__main__':
