@@ -3,6 +3,7 @@
 # Get a recorded PCAP file, assume that payload is 16 bits RGB565, save the payload to the PNG image file
 # Data can come from OV7691
 from collections import namedtuple
+from test.test_ssl import data_file
 '''
 Usage:
     parse_minidump.py parse --filein=FILENAME 
@@ -59,7 +60,22 @@ def open_file(filename, flag):
 def get_mask(bits):
     return (1 << bits) - 1
 
+def data_to_hex(data):
+    s = ""
+    for b in data:
+        s =  s + hex(b)
+        
+    return s
 
+def data_to_ascii(data):
+    s = ""
+    for b in data:
+        if (b >= 0x20) and (b <= 0x7e)
+            s =  s + b
+        else
+            s = s + "."
+    return s
+        
 def get_bits(value, start, bits):
     mask = get_mask(bits)
     value = value >> start
@@ -113,7 +129,20 @@ HEADER_STRUCT = (
     # size is 0x1000 bytes
 );
 
+def read_field(file, size):
+    data = file.read(size)
+    return data
+
+def print_field(data_field, data):
+    value = data_to_hex(data)
+    value_ascii = data_to_ascii(data)
+    logger.info("{0} = {1} ({2})".format(data_field.name, value, value_ascii))
+    
 def parse_dump_header(arguments, file_dump):
+    for data_field in HEADER_STRUCT:
+        if (not data_field.is_struct):
+            data = read_field(file_dump, data_field.size)
+            print_field(data_field, data)
 
 def parse_dump(arguments):
     filename_in = arguments["--filein"]
