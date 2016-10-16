@@ -128,7 +128,8 @@ def read_field(file, size):
     data = file.read(size)
     return data
 
-def parse_field(data_field, data):
+def parse_field(file, data_field):
+    data = read_field(file, data_field.size)
     value = data_to_hex(data)
     (contains_ascii, value_ascii) = data_to_ascii(data)
     if (contains_ascii):
@@ -138,12 +139,15 @@ def parse_field(data_field, data):
         
     return (value, contains_ascii, value_ascii)
 
+def parse_dump_header_physical_blocks(arguments, file_dump):
+    number_of_runs = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT[0])
+    number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT[1])
+
 def parse_dump_header(arguments, file_dump):
     dump_type_64 = None
     for data_field in HEADER_STRUCT:
         if (not data_field.is_struct):
-            data = read_field(file_dump, data_field.size)
-            (value, contains_ascii, value_ascii) = parse_field(data_field, data)
+            (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
             if (data_field.name == "Signature"):
                 if (value_ascii != "PAGE"):
                     logger.error("Failed to parse header in the file '{0}' - no signature. {1} instead of expected {2}".format(filename_in, value_ascii, "PAGE"))
@@ -155,6 +159,9 @@ def parse_dump_header(arguments, file_dump):
                     logger.info("64bits dump")
                 else:
                     logger.info("32bits dump")
+        if (data_field.name == "PhysicalMemoryBlock"):
+            parse_dump_header_physical_blocks(arguments, file_dump)
+            
     return dump_type_64
                  
                     
