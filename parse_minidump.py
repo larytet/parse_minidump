@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 # Get a recorded PCAP file, assume that payload is 16 bits RGB565, save the payload to the PNG image file
 # Data can come from OV7691
-from collections import namedtuple
-from test.test_ssl import data_file
 '''
 Usage:
     parse_minidump.py parse --filein=FILENAME 
@@ -153,7 +151,7 @@ def parse_dump(arguments):
 
 
 if __name__ == '__main__':
-    arguments = docopt(__doc__, version='Windows dump file parser')
+    arguments = docopt(__doc__, version="parser")
 
     logging.basicConfig()
     logger = logging.getLogger('parser')
