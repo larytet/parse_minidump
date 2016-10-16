@@ -82,78 +82,24 @@ def get_bits(value, start, bits):
     value = value & mask
     return value
 
+def get_int(data):
+    if (len(data) == 4):
+        return struct.unpack("<I", data)[0]
+    if (len(data) == 8):
+        return struct.unpack("<Q", data)[0]
+    else:
+        logger.error("Failed to convert data {0} bytes".format(len(data)))
+        return -1;
+ 
+   
 class DataField:
     def __init__(self, name, size, data_struct = None):
         self.name = name
         self.size = size
         self.data_struct = data_struct
         self.is_struct = (data_struct != None)
-
-PHYSICAL_MEMORY_RUN32_STRUCT = (
-    DataField("BasePage", 4),
-    DataField("PageCount", 4),
-);
-
-
-PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT = (
-    DataField("NumberOfRuns", 4),
-    DataField("NumberOfPages", 4),
-    DataField("Run", 256, PHYSICAL_MEMORY_RUN32_STRUCT)
-);
-
-HEADER32_STRUCT = (
-    DataField("Signature", 4),
-    DataField("ValidDump", 4),
-    DataField("MajorVersion", 4),
-    DataField("MinorVersion", 4),
-    DataField("DirectoryTableBase", 4),
-    DataField("PfnDataBase", 4), 
-    DataField("PsLoadedModuleList", 4),
-    DataField("PsActiveProcessHead", 4),
-    DataField("MachineImageType", 4),
-    DataField("NumberProcessors", 4),
-    DataField("BugCheckCode", 4),
-    DataField("BugCheckParameter", 16),
-    DataField("VersionUser", 32),
-    DataField("PaeEnabled", 1),
-    DataField("KdSecondaryVersion", 1),
-    DataField("Spare", 32),
-    DataField("KdDebuggerDataBlock", 32),
-    DataField("PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT)
-    # size is 0x1000 bytes
-);
-
-PHYSICAL_MEMORY_RUN64_STRUCT = (
-    DataField("BasePage", 8),
-    DataField("PageCount", 8),
-);
-
-PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT = (
-    DataField("NumberOfRuns", 8),
-    DataField("NumberOfPages", 8),
-    DataField("Run", 256, PHYSICAL_MEMORY_RUN64_STRUCT)
-);
-
-HEADER64_STRUCT = (
-    DataField("Signature", 4),
-    DataField("ValidDump", 4),
-    DataField("MajorVersion", 4),
-    DataField("MinorVersion", 4),
-    DataField("DirectoryTableBase", 8),
-    DataField("PfnDataBase", 8), 
-    DataField("PsLoadedModuleList", 8),
-    DataField("PsActiveProcessHead", 8),
-    DataField("MachineImageType", 4),
-    DataField("NumberProcessors", 4),
-    DataField("BugCheckCode", 4),
-    DataField("Skip", 4),
-    DataField("BugCheckParameter", 4*8),
-    DataField("Skip", 0x20),
-    DataField("KdDebuggerDataBlock", 8),
-    DataField("PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT),
-    DataField("Skip", 0xf00),
-    # size is 0x2000 bytes 
-);
+        
+    
 
 
 MINIDUMP_TYPE =  { 
@@ -182,27 +128,50 @@ MINIDUMP_TYPE =  {
   0x001fffff : "MiniDumpValidTypeFlags                  "
 };
 
+'''
+https://msdn.microsoft.com/en-us/library/ms680383%28v=vs.85%29.aspx
+'''
+MINIDUMP_LOCATION_DESCRIPTOR_STRUCT = (
+  DataField("DataSize", 4),
+  DataField("RVA", 4)  # byte offset of the data stream from the beginning of the minidump file
+);
+
 MINIDUMP_DIRECTORY_STRUCT = (
     DataField("StreamType", 4),
-    DataField("Location", 4)
+    DataField("Location", 1, MINIDUMP_LOCATION_DESCRIPTOR_STRUCT)
 );
 
 '''
-Based on https://msdn.microsoft.com/en-us/library/ms680378%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
+Based on https://msdn.microsoft.com/en-us/library/ms680378%28v=vs.85%29.aspx
 '''
-MINIDUMP_HEADER32_STRUCT = (
+MINIDUMP_HEADER_STRUCT = (
     DataField("Signature", 4),
     DataField("ValidDump", 4),
     DataField("NumberOfStreams", 4),                  # The number of streams in the minidump directory.
-    DataField("StreamDirectoryRva", 4, MINIDUMP_DIRECTORY_STRUCT),   # The directory is an array of MINIDUMP_DIRECTORY structures. 
+    DataField("StreamDirectoryRva", 15, MINIDUMP_DIRECTORY_STRUCT),   # The directory is an array of MINIDUMP_DIRECTORY structures. 
     DataField("CheckSum", 4),
     DataField("TimeDateStamp", 4), 
     DataField("Flags", 8)               # MINIDUMP_TYPE
-    # size is 0x1000 bytes
 );
 
+def parse_minidump_location_descriptor(arguments, file_dump):
+    (data, data_hex, contains_ascii, value_ascii) = parse_field(file_dump, MINIDUMP_LOCATION_DESCRIPTOR_STRUCT[0])
+    data_size = get_int(data)
+    (data, data_hex, contains_ascii, value_ascii) = parse_field(file_dump, MINIDUMP_LOCATION_DESCRIPTOR_STRUCT[1])
+    rva = get_int(data)
+    return (data_size, rva)
+    
+def parse_minidump_directory(arguments, file_dump):
+    for data_field in MINIDUMP_DIRECTORY_STRUCT:
+        (data, data_hex, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+        stream_type = get_int(data)
+        (data_size, data_offset) = parse_minidump_location_descriptor(arguments, file_dump)
+        logger.info("Stream {0}, size {1} bytes, offset {2}".format(stream_type, data_size, data_offset));
+        
+        
+    
 def parse_minidump_header(arguments, file_dump):
-    for data_field in MINIDUMP_HEADER32_STRUCT:
+    for data_field in MINIDUMP_HEADER_STRUCT:
         if (not data_field.is_struct):
             (data, data_hex, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
             if (data_field.name == "Signature"):
@@ -217,8 +186,10 @@ def parse_minidump_header(arguments, file_dump):
                     logger.info("32bits dump")
             
             if data_field.name == "NumberOfStreams":
-                number_of_streams = struct.unpack("<I", data)[0]
+                number_of_streams = get_int(data)
                 logger.info("Number of streams = {0}".format(number_of_streams))
+                for stream_idx in range(number_of_streams):
+                    parse_minidump_directory(arguments, file_dump)
                 break
             
             
