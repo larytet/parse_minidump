@@ -220,13 +220,12 @@ def parse_dump_header(arguments, file_dump):
                     break
             if (data_field.name == "ValidDump"):
                 dump_type_64 = (value_ascii == "DU64") 
-                    
-        if (dump_type_64):
-            parse_dump_header_64(arguments, file_dump)
-        else:
-            parse_dump_header_32(arguments, file_dump)
+                if (dump_type_64):
+                    parse_dump_header_64(arguments, file_dump)
+                else:
+                    parse_dump_header_32(arguments, file_dump)
             
-        break
+                break
             
             
     return dump_type_64
