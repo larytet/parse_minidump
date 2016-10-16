@@ -129,13 +129,14 @@ def read_field(file, size):
     return data
 
 def parse_field(file, data_field):
+    file_offset = file.tell()
     data = read_field(file, data_field.size)
     value = data_to_hex(data)
     (contains_ascii, value_ascii) = data_to_ascii(data)
     if (contains_ascii):
-        logger.info("{0} = {1} ({2})".format(data_field.name, value, value_ascii))
+        logger.info("{3}:{0} = {1} ({2})".format(data_field.name, value, value_ascii, hex(file_offset)))
     else:
-        logger.info("{0} = {1}".format(data_field.name, value))
+        logger.info("{2}:{0} = {1}".format(data_field.name, value, hex(file_offset))
         
     return (value, contains_ascii, value_ascii)
 
