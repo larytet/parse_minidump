@@ -148,7 +148,7 @@ MINIDUMP_HEADER_STRUCT = (
     DataField("Signature", 4),
     DataField("ValidDump", 4),
     DataField("NumberOfStreams", 4),                  # The number of streams in the minidump directory.
-    DataField("StreamDirectoryRva", 15, MINIDUMP_DIRECTORY_STRUCT),   # The directory is an array of MINIDUMP_DIRECTORY structures. 
+    DataField("StreamDirectoryRva", 4, MINIDUMP_DIRECTORY_STRUCT),   # The directory is an array of MINIDUMP_DIRECTORY structures. 
     DataField("CheckSum", 4),
     DataField("TimeDateStamp", 4), 
     DataField("Flags", 8)               # MINIDUMP_TYPE
