@@ -192,10 +192,11 @@ def parse_minidump_header(arguments, file_dump):
             if data_field.name == "StreamDirectoryRva":
                 stream_directory_rva = get_int(data)
                 logger.info("StreamDirectoryRva = {0}".format(stream_directory_rva))
-                #for stream_idx in range(number_of_streams):
-                #    parse_minidump_directory(arguments, file_dump)
-                break
             
+            if data_field.name == "Flags":
+                flags = get_int(data)
+                logger.info("Flags = {0}".format(hex(flags)))
+                break
             
     return dump_type_64
 
