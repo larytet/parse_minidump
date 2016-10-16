@@ -60,18 +60,20 @@ def get_mask(bits):
 def data_to_hex(data):
     s = ""
     for b in data:
-        s =  s + hex(b)
+        s =  s + hex(ord(b))
         
     return s
 
 def data_to_ascii(data):
     s = ""
+    contains_ascii = False
     for b in data:
         if (b >= 0x20) and (b <= 0x7e):
             s =  s + b
+            contains_ascii = True
         else:
             s = s + "."
-    return s
+    return (contains_ascii, s)
         
 def get_bits(value, start, bits):
     mask = get_mask(bits)
@@ -127,8 +129,11 @@ def read_field(file, size):
 
 def print_field(data_field, data):
     value = data_to_hex(data)
-    value_ascii = data_to_ascii(data)
-    logger.info("{0} = {1} ({2})".format(data_field.name, value, value_ascii))
+    (contains_ascii, value_ascii) = data_to_ascii(data)
+    if (contains_ascii):
+        logger.info("{0} = {1} ({2})".format(data_field.name, value, value_ascii))
+    else:
+        logger.info("{0} = {1}".format(data_field.name, value))
 
 def parse_dump_header(arguments, file_dump):
     for data_field in HEADER_STRUCT:
