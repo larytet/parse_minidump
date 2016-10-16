@@ -22,7 +22,6 @@ import struct
 import time
 from datetime import datetime
 import subprocess
-import collections.namedtuple
 
 
 try:
@@ -83,16 +82,11 @@ def get_bits(value, start, bits):
     return value
 
 class DataField:
-    def __init__(self, name, size):
-        self.name = name
-        self.size = size
-        self.is_struct = False
-
-    def __init__(self, name, size, data_struct):
+    def __init__(self, name, size, data_struct = None):
         self.name = name
         self.size = size
         self.data_struct = data_struct
-        self.is_struct = True
+        self.is_struct = (data_struct != None)
 
 PHYSICAL_MEMORY_RUN32_STRUCT = (
     DataField("BasePage", 4),
@@ -137,7 +131,13 @@ def print_field(data_field, data):
     value = data_to_hex(data)
     value_ascii = data_to_ascii(data)
     logger.info("{0} = {1} ({2})".format(data_field.name, value, value_ascii))
-    
+
+def parse_dump_header(arguments, file_dump):
+    for data_field in HEADER_STRUCT:
+        if (not data_field.is_struct):
+            data = read_field(file_dump, data_field.size)
+            print_field(data_field, data)
+
 def parse_dump(arguments):
     filename_in = arguments["--filein"]
     logger.info("Parse file '{0}'".format(filename_in))
