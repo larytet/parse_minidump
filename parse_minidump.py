@@ -188,8 +188,8 @@ def parse_minidump_header(arguments, file_dump):
             if data_field.name == "NumberOfStreams":
                 number_of_streams = get_int(data)
                 logger.info("Number of streams = {0}".format(number_of_streams))
-                for stream_idx in range(number_of_streams):
-                    parse_minidump_directory(arguments, file_dump)
+                #for stream_idx in range(number_of_streams):
+                #    parse_minidump_directory(arguments, file_dump)
                 break
             
             
