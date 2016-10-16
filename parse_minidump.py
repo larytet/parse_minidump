@@ -184,11 +184,13 @@ def parse_dump_header_physical_blocks_32(arguments, file_dump):
 
 def parse_dump_header_64(arguments, file_dump):
     logger.info("64bits dump")
-    for data_field in HEADER64_STRUCT:
-        if (data_field.name == "MajorVersion"):
-            break
+    skip = True
         
     for data_field in HEADER64_STRUCT:
+        if (data_field.name == "MajorVersion"):
+            skip = False
+        if skip:
+            continue
         if (not data_field.is_struct):
             (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
         else:
@@ -197,11 +199,12 @@ def parse_dump_header_64(arguments, file_dump):
     
 def parse_dump_header_32(arguments, file_dump):
     logger.info("32bits dump")
-    for data_field in HEADER32_STRUCT:
-        if (data_field.name == "MajorVersion"):
-            break
-        
+    skip = True
     for data_field in HEADER64_STRUCT:
+        if (data_field.name == "MajorVersion"):
+            skip = False
+        if skip:
+            continue
         if (not data_field.is_struct):
             (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
         else:
