@@ -182,6 +182,11 @@ MINIDUMP_TYPE =  {
   0x001fffff : "MiniDumpValidTypeFlags                  "
 };
 
+MINIDUMP_DIRECTORY_STRUCT = (
+    DataField("StreamType", 4),
+    DataField("Location", 4)
+);
+
 '''
 Based on https://msdn.microsoft.com/en-us/library/ms680378%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
 '''
@@ -196,10 +201,10 @@ MINIDUMP_HEADER32_STRUCT = (
     # size is 0x1000 bytes
 );
 
-def parse_minimdump_header(arguments, file_dump):
+def parse_minidump_header(arguments, file_dump):
     for data_field in MINIDUMP_HEADER32_STRUCT:
         if (not data_field.is_struct):
-            (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+            (data, data_hex, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
             if (data_field.name == "Signature"):
                 if (value_ascii != "PAGE"):
                     logger.error("Failed to parse header in the file '{0}' - no signature. {1} instead of expected {2}".format(filename_in, value_ascii, "PAGE"))
@@ -212,7 +217,7 @@ def parse_minimdump_header(arguments, file_dump):
                     logger.info("32bits dump")
             
             if data_field.name == "NumberOfStreams":
-                number_of_streams = struct.unpack(">L", value)[0]
+                number_of_streams = struct.unpack("<I", data)[0]
                 logger.info("Number of streams = {0}".format(number_of_streams))
                 break
             
@@ -226,18 +231,18 @@ def read_field(file, size):
 def parse_field(file, data_field):
     file_offset = file.tell()
     data = read_field(file, data_field.size)
-    value = data_to_hex(data)
+    data_hex = data_to_hex(data)
     (contains_ascii, value_ascii) = data_to_ascii(data)
     if (data_field.name != "Skip"):
         if (contains_ascii):
-            logger.info("{3}:{0} = {1} ({2})".format(data_field.name, value, value_ascii, hex(file_offset)))
+            logger.info("{3}:{0} = {1} ({2})".format(data_field.name, data_hex, value_ascii, hex(file_offset)))
         else:
-            logger.info("{2}:{0} = {1}".format(data_field.name, value, hex(file_offset)))
+            logger.info("{2}:{0} = {1}".format(data_field.name, data_hex, hex(file_offset)))
     else:
         logger.info("Skip {0} bytes".format(data_field.size))
         
         
-    return (value, contains_ascii, value_ascii)
+    return (data, data_hex, contains_ascii, value_ascii)
 
 def parse_dump_header_physical_blocks_64(arguments, file_dump):
     number_of_runs = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0])
@@ -272,7 +277,7 @@ def parse_dump_header_32(arguments, file_dump):
         if skip:
             continue
         if (not data_field.is_struct):
-            (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+            (value, value_hex, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
         else:
             if (data_field.name == "PhysicalMemoryBlock"):
                 parse_dump_header_physical_blocks_32(arguments, file_dump)
