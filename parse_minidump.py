@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Get a recorded PCAP file, assume that payload is 16 bits RGB565, save the payload to the PNG image file
 # Data can come from OV7691
+from symbol import argument
 '''
 Usage:
     parse_minidump.py parse --filein=FILENAME 
@@ -60,7 +61,7 @@ def get_mask(bits):
 def data_to_hex(data):
     s = ""
     for b in data:
-        s =  s + hex(ord(b))
+        s = format(ord(b), 'x') + s
         
     return s
 
@@ -102,7 +103,7 @@ PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT = (
 );
 
      
-HEADER_STRUCT = (
+HEADER32_STRUCT = (
     DataField("Signature", 4),
     DataField("ValidDump", 4),
     DataField("MajorVersion", 4),
@@ -124,6 +125,38 @@ HEADER_STRUCT = (
     # size is 0x1000 bytes
 );
 
+PHYSICAL_MEMORY_RUN64_STRUCT = (
+    DataField("BasePage", 8),
+    DataField("PageCount", 8),
+);
+
+PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT = (
+    DataField("NumberOfRuns", 8),
+    DataField("NumberOfPages", 8),
+    DataField("Run", 256, PHYSICAL_MEMORY_RUN64_STRUCT)
+);
+
+HEADER64_STRUCT = (
+    DataField("Signature", 4),
+    DataField("ValidDump", 4),
+    DataField("MajorVersion", 4),
+    DataField("MinorVersion", 4),
+    DataField("DirectoryTableBase", 8),
+    DataField("PfnDataBase", 8), 
+    DataField("PsLoadedModuleList", 8),
+    DataField("PsActiveProcessHead", 8),
+    DataField("MachineImageType", 4),
+    DataField("NumberProcessors", 4),
+    DataField("BugCheckCode", 4),
+    DataField("Skip", 4),
+    DataField("BugCheckParameter", 4*8),
+    DataField("Skip", 0x80),
+    DataField("KdDebuggerDataBlock", 8),
+    DataField("PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT)
+    DataField("Skip", 0xf00),
+    # size is 0x2000 bytes 
+);
+
 def read_field(file, size):
     data = file.read(size)
     return data
@@ -136,17 +169,51 @@ def parse_field(file, data_field):
     if (contains_ascii):
         logger.info("{3}:{0} = {1} ({2})".format(data_field.name, value, value_ascii, hex(file_offset)))
     else:
-        logger.info("{2}:{0} = {1}".format(data_field.name, value, hex(file_offset))
+        logger.info("{2}:{0} = {1}".format(data_field.name, value, hex(file_offset)))
         
     return (value, contains_ascii, value_ascii)
 
-def parse_dump_header_physical_blocks(arguments, file_dump):
+def parse_dump_header_physical_blocks_64(arguments, file_dump):
+    number_of_runs = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0])
+    number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[1])
+
+def parse_dump_header_physical_blocks_32(arguments, file_dump):
     number_of_runs = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT[0])
     number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT[1])
 
+
+def parse_dump_header_64(arguments, file_dump):
+    logger.info("64bits dump")
+    if (data_field.name == "PhysicalMemoryBlock"):
+        parse_dump_header_physical_blocks(arguments, file_dump)
+    for data_field in HEADER64_STRUCT:
+        if (data_field.name == "MajorVersion"):
+            break
+        
+    for data_field in HEADER64_STRUCT:
+        if (not data_field.is_struct):
+            (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+        else:
+            if (data_field.name == "PhysicalMemoryBlock"):
+                parse_dump_header_physical_blocks_64(arguments, file_dump)
+    
+def parse_dump_header_32(arguments, file_dump):
+    logger.info("32bits dump")
+    for data_field in HEADER32_STRUCT:
+    for data_field in HEADER64_STRUCT:
+        if (data_field.name == "MajorVersion"):
+            break
+        
+    for data_field in HEADER64_STRUCT:
+        if (not data_field.is_struct):
+            (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+        else:
+            if (data_field.name == "PhysicalMemoryBlock"):
+                parse_dump_header_physical_blocks_32(arguments, file_dump)
+
 def parse_dump_header(arguments, file_dump):
     dump_type_64 = None
-    for data_field in HEADER_STRUCT:
+    for data_field in HEADER32_STRUCT:
         if (not data_field.is_struct):
             (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
             if (data_field.name == "Signature"):
@@ -157,11 +224,16 @@ def parse_dump_header(arguments, file_dump):
                 dump_type_64 = (value_ascii == "DU64") 
                     
                 if dump_type_64:
-                    logger.info("64bits dump")
                 else:
                     logger.info("32bits dump")
-        if (data_field.name == "PhysicalMemoryBlock"):
-            parse_dump_header_physical_blocks(arguments, file_dump)
+                    
+        if (dump_type_64):
+            parse_dump_header_64(arguments, file_dump)
+        else:
+            parse_dump_header_32(arguments, file_dump)
+            
+        break
+            
             
     return dump_type_64
                  
