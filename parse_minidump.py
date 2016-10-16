@@ -170,6 +170,9 @@ def parse_field(file, data_field):
             logger.info("{3}:{0} = {1} ({2})".format(data_field.name, value, value_ascii, hex(file_offset)))
         else:
             logger.info("{2}:{0} = {1}".format(data_field.name, value, hex(file_offset)))
+    else:
+        logger.info("Skip {0} bytes".format(data_field.size))
+        
         
     return (value, contains_ascii, value_ascii)
 
