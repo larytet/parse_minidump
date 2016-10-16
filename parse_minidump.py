@@ -138,12 +138,6 @@ def print_field(data_field, data):
     value_ascii = data_to_ascii(data)
     logger.info("{0} = {1} ({2})".format(data_field.name, value, value_ascii))
     
-def parse_dump_header(arguments, file_dump):
-    for data_field in HEADER_STRUCT:
-        if (not data_field.is_struct):
-            data = read_field(file_dump, data_field.size)
-            print_field(data_field, data)
-
 def parse_dump(arguments):
     filename_in = arguments["--filein"]
     logger.info("Parse file '{0}'".format(filename_in))
