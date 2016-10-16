@@ -149,7 +149,7 @@ HEADER64_STRUCT = (
     DataField("BugCheckCode", 4),
     DataField("Skip", 4),
     DataField("BugCheckParameter", 4*8),
-    DataField("Skip", 0x80),
+    DataField("Skip", 0x20),
     DataField("KdDebuggerDataBlock", 8),
     DataField("PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT),
     DataField("Skip", 0xf00),
