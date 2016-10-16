@@ -101,7 +101,6 @@ PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT = (
     DataField("Run", 256, PHYSICAL_MEMORY_RUN32_STRUCT)
 );
 
-     
 HEADER32_STRUCT = (
     DataField("Signature", 4),
     DataField("ValidDump", 4),
@@ -155,6 +154,70 @@ HEADER64_STRUCT = (
     DataField("Skip", 0xf00),
     # size is 0x2000 bytes 
 );
+
+
+MINIDUMP_TYPE =  { 
+  0x00000000 : "MiniDumpNormal                          ",
+  0x00000001 : "MiniDumpWithDataSegs                    ",
+  0x00000002 : "MiniDumpWithFullMemory                  ",
+  0x00000004 : "MiniDumpWithHandleData                  ",
+  0x00000008 : "MiniDumpFilterMemory                    ",
+  0x00000010 : "MiniDumpScanMemory                      ",
+  0x00000020 : "MiniDumpWithUnloadedModules             ",
+  0x00000040 : "MiniDumpWithIndirectlyReferencedMemory  ",
+  0x00000080 : "MiniDumpFilterModulePaths               ",
+  0x00000100 : "MiniDumpWithProcessThreadData           ",
+  0x00000200 : "MiniDumpWithPrivateReadWriteMemory      ",
+  0x00000400 : "MiniDumpWithoutOptionalData             ",
+  0x00000800 : "MiniDumpWithFullMemoryInfo              ",
+  0x00001000 : "MiniDumpWithThreadInfo                  ",
+  0x00002000 : "MiniDumpWithCodeSegs                    ",
+  0x00004000 : "MiniDumpWithoutAuxiliaryState           ",
+  0x00008000 : "MiniDumpWithFullAuxiliaryState          ",
+  0x00010000 : "MiniDumpWithPrivateWriteCopyMemory      ",
+  0x00020000 : "MiniDumpIgnoreInaccessibleMemory        ",
+  0x00040000 : "MiniDumpWithTokenInformation            ",
+  0x00080000 : "MiniDumpWithModuleHeaders               ",
+  0x00100000 : "MiniDumpFilterTriage                    ",
+  0x001fffff : "MiniDumpValidTypeFlags                  "
+};
+
+'''
+Based on https://msdn.microsoft.com/en-us/library/ms680378%28v=vs.85%29.aspx?f=255&MSPPError=-2147217396
+'''
+MINIDUMP_HEADER32_STRUCT = (
+    DataField("Signature", 4),
+    DataField("ValidDump", 4),
+    DataField("NumberOfStreams", 4),                  # The number of streams in the minidump directory.
+    DataField("StreamDirectoryRva", 4, MINIDUMP_DIRECTORY_STRUCT),   # The directory is an array of MINIDUMP_DIRECTORY structures. 
+    DataField("CheckSum", 4),
+    DataField("TimeDateStamp", 4), 
+    DataField("Flags", 8)               # MINIDUMP_TYPE
+    # size is 0x1000 bytes
+);
+
+def parse_minimdump_header(arguments, file_dump):
+    for data_field in MINIDUMP_HEADER32_STRUCT:
+        if (not data_field.is_struct):
+            (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+            if (data_field.name == "Signature"):
+                if (value_ascii != "PAGE"):
+                    logger.error("Failed to parse header in the file '{0}' - no signature. {1} instead of expected {2}".format(filename_in, value_ascii, "PAGE"))
+                    break
+            if (data_field.name == "ValidDump"):
+                dump_type_64 = (value_ascii == "DU64") 
+                if (dump_type_64):
+                    logger.info("64bits dump")
+                else:
+                    logger.info("32bits dump")
+            
+            if data_field.name == "NumberOfStreams":
+                number_of_streams = struct.unpack(">L", value)[0]
+                logger.info("Number of streams = {0}".format(number_of_streams))
+                break
+            
+            
+    return dump_type_64
 
 def read_field(file, size):
     data = file.read(size)
@@ -235,9 +298,20 @@ def parse_dump_header(arguments, file_dump):
             
             
     return dump_type_64
-                 
-                    
+                                     
                 
+def parse_minidump(arguments):
+    filename_in = arguments["--filein"]
+    logger.info("Parse file '{0}'".format(filename_in))
+    while True:
+        (result, file_dump) = open_file(filename_in, 'rb')
+        if not result:
+            logger.error("Failed to open file '{0}' for reading".format(filename_in))
+            break
+        parse_minidump_header(arguments, file_dump)
+        
+        file_dump.close()
+        break
 
 def parse_dump(arguments):
     filename_in = arguments["--filein"]
@@ -263,4 +337,4 @@ if __name__ == '__main__':
     is_parse = arguments["parse"]
 
     if is_parse:
-        parse_dump(arguments)
+        parse_minidump(arguments)
