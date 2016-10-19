@@ -411,22 +411,18 @@ def parse_strings(arguments, file_dump, strings_offset):
         length_hex = data_to_hex(data)
         length = int(length_hex, 16)
         if (length == 0):
-            logger.debug("{0}: Length is zero".format(hex(strings_offset)))
+            logger.debug("{0}: Length is zero".format(hex(cursor_tmp)))
             break
         if (length > 256):
             logger.debug("{0}:Length is {1} bytes".format(hex(cursor_tmp), length))
             break
-        string = read_field(file_dump, 2*length)
+        # The whole string - length, chars, zero termination - should be 64 bits aligned
+        # padded by zeros
+        bytes_to_read = 2*length+2+4  
+        bytes_to_read = (bytes_to_read + 7) & (~7)
+        string = read_field(file_dump, bytes_to_read-4)  # I read 4 bytes of length already  
         (contains_ascii, string_ascii) = data_to_ascii(string, 256)
-        logger.debug("{0}: length={1},'{2}'".format(hex(file_offset), length, string_ascii))
-        
-        cursor_tmp = file_dump.tell()
-        data = read_field(file_dump, 2) # I expect zero terminaiton here
-        zero_hex = data_to_hex(data)
-        zero = int(zero_hex, 16)  
-        if (zero != 0):
-            logger.debug("{0}:Missing zero termination - got {1} instead".format(hex(cursor_tmp), zero_hex))
-            break
+        logger.debug("{0}: length={1},bytes={2},'{3}'".format(hex(file_offset), length, bytes_to_read, string_ascii))
         
     file_dump.seek(file_dump_cursor)
         
