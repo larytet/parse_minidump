@@ -3,6 +3,8 @@
 # Get a recorded PCAP file, assume that payload is 16 bits RGB565, save the payload to the PNG image file
 # Data can come from OV7691
 '''
+The script parses the Windows BSOD dumpfiles. It handles only files which start with 
+'PAGEDU64' or 'PAGEDUMP'
 Usage:
     parse_minidump.py parse --filein=FILENAME 
 
@@ -218,6 +220,46 @@ HEADER64_STRUCT = (
     # size is 0x2000 bytes 
 );
 
+VS_FIXEDFILEINFO_STRUCT = (
+  DataField("dwSignature", 4),
+  DataField("dwStrucVersion", 4),
+  DataField("dwFileVersionMS", 4),
+  DataField("dwFileVersionLS", 4),
+  DataField("dwProductVersionMS", 4),
+  DataField("dwProductVersionLS", 4),
+  DataField("dwFileFlagsMask", 4),
+  DataField("dwFileFlags", 4),
+  DataField("dwFileOS", 4),
+  DataField("dwFileType", 4),
+  DataField("dwFileSubtype", 4),
+  DataField("dwFileDateMS", 4),
+  DataField("dwFileDateLS", 4)
+);
+
+MINIDUMP_LOCATION_DESCRIPTOR = (
+  DataField("DataSize", 4),
+  DataField("Rva", 4)
+);
+
+MINIDUMP_MODULE64_STRUCT = (
+  DataField("BaseOfImage", 8),
+  DataField("SizeOfImage", 4),
+  DataField("CheckSum", 4),
+  DataField("TimeDateStamp", 4),
+  DataField("ModuleNameRva", 4),
+  DataField("VersionInfo", 4, VS_FIXEDFILEINFO_STRUCT),
+  DataField("CvRecord", 4, MINIDUMP_LOCATION_DESCRIPTOR),
+  DataField("MiscRecord", 4, MINIDUMP_LOCATION_DESCRIPTOR),
+  DataField("Reserved0", 8),
+  DataField("Reserved1", 8),
+);
+
+MINIDUMP_MODULE_LIST_STRUCT = (
+  DataField("NumberOfModules", 4),
+  ULONG32         NumberOfModules;
+  DataField("Modules", 4, MINIDUMP_MODULE),
+);
+
 def read_field(file, size):
     data = file.read(size)
     return data
@@ -237,6 +279,15 @@ def parse_field(file, data_field):
         
         
     return (value, contains_ascii, value_ascii)
+
+def parse_dump_header_generic_struct(arguments, file_dump, struct):
+    for data_field in struct:
+        if (not data_field.is_struct):
+            parse_field(file_dump, data_field)
+        else:
+            parse_dump_header_generic_struct(arguments, file_dump, struct)
+        
+    
 
 def parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data_field):
     (value, contains_ascii, value_ascii) = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0])
@@ -285,6 +336,8 @@ def parse_dump_header_64(arguments, file_dump):
             if (data_field.name == "Exception"):
                 (exception_code, exception_flags, exception_address) = parse_dump_header_exception_64(arguments, file_dump)
                 logger.info("Exception: code={0}, address={1}, flags={2}".format(hex(exception_code), hex(exception_address), hex(exception_flags)))
+            else:
+                parse_dump_header_generic_struct(arguments, file_dump)
     return physical_memory_presents;
                 
     
@@ -349,7 +402,7 @@ if __name__ == '__main__':
 
     logging.basicConfig()
     logger = logging.getLogger('parser')
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     is_parse = arguments["parse"]
 
