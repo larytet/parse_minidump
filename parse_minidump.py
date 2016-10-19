@@ -191,25 +191,32 @@ EXCEPTION_RECORD64_STRUCT = (
 DUMP_0x2000_STRUCT = (
     DataField("Uknwn", 4),  # 2000
     DataField("DumbBlob", 4), # DumbBlob (hardware?)  
-    DataField("StackRva", 4),
+    DataField("Uknwn", 4),
     
-    DataField("Uknwn", 4), # 2010
+    DataField("StackRva", 4), 
     DataField("Uknwn", 4),
     DataField("Uknwn", 4),
     DataField("Uknwn", 4),
 
-    DataField("Uknwn", 4), # 2020
+    DataField("Uknwn", 4), 
     DataField("Uknwn", 4),
     DataField("Uknwn", 4),
     DataField("Uknwn", 4),
 
-    DataField("Uknwn", 4), # 2030
+    DataField("Uknwn", 4), 
     DataField("Uknwn", 4),
     DataField("StringsRva", 4),
     DataField("Uknwn", 4),
 );
 
 DUMP_STACK64_STRUCT = (
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
     DataField("Uknwn", 8),
     DataField("Uknwn", 8),
     DataField("Uknwn", 8),
