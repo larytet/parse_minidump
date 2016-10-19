@@ -480,6 +480,8 @@ def parse_modules(arguments, file_dump, modules_offset_base):
         (name_offset, address, size) = parse_module(arguments, file_dump)
         if (name_offset >= 0xFFFF):
             break
+        if (name_offset <= modules_offset_base):
+            break
         modules.append((name_offset, address, size))
         
     file_dump.seek(file_dump_cursor)
@@ -651,12 +653,15 @@ def parse_dump_header_64(arguments, file_dump):
                 loaded_modules_names = parse_strings(arguments, file_dump, strings_offset)
                 for loaded_modules_offset in loaded_modules_names:
                     loaded_modules_name = loaded_modules_names[loaded_modules_offset]
-                    #logger.info("Module: {0}:{1}".format(hex(loaded_modules_offset), loaded_modules_name))
+                    logger.debug("Module: {0}:{1}".format(hex(loaded_modules_offset), loaded_modules_name))
                 stack_addresses = parse_stack_frames64(arguments, file_dump, stack_offset)
                 loaded_modules = parse_modules(arguments, file_dump, modules_offset)
                 
                 for loaded_module in loaded_modules:
                     loaded_module_name_offset = loaded_module[0]
+                    loaded_module_address = loaded_module[1]
+                    loaded_module_size = loaded_module[2]
+                    logger.debug("Loaded module: name_rva={0}, address={1}, size={2}".format(hex(loaded_module_name_offset), hex(loaded_module_address), hex(loaded_module_size)))
                     loaded_module_name = loaded_modules_names[loaded_module_name_offset]
                     logger.info("{0}:address={1}, size={2}".format(loaded_module_name, hex(loaded_module[1]), loaded_module[2]))
                 logger.info("Stack: {0}".format(stack_addresses))
