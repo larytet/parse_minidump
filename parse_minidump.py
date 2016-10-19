@@ -379,7 +379,7 @@ def parse_stack_frames64(arguments, file_dump, stack_offset):
     # End of the strings section is 16 bits zero
     while (True):
         (ip_address, return_address) = parse_stack_frame64(arguments, file_dump)
-        logger.info("Stack frame IP={0}, Return={return_address}");
+        logger.info("Stack frame IP={0}, Return={return_address}".format(ip_address, return_address));
         if (ip_address == 0):
             break
         
