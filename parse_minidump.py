@@ -62,7 +62,10 @@ def get_mask(bits):
 def data_to_hex(data, max_length=32):
     s = ""
     for b in data:
-        s = format(ord(b), 'x') + s
+        hex_str = format(ord(b), 'x')
+        if (len(hex_str) < 2):
+            hex_str = '0'+hex_str
+        s = hex_str + s
         max_length = max_length - 1
         if (max_length == 0):
             break
@@ -357,6 +360,7 @@ def parse_dump_header_0x2000(arguments, file_dump):
             logger.debug("Loaded modules names at offset {0}".format(hex(strings_offset)))
         if (data_field.name == "StackRva"):
             stack_offset = int(value, 16)
+            stack_offset = 0x400
             logger.debug("Stack frames at offset {0}".format(hex(stack_offset)))
     return (strings_offset, stack_offset)
 
@@ -426,6 +430,8 @@ def parse_strings(arguments, file_dump, strings_offset):
 Frame: IP=fffff800026d4f00  Return=fffff800026d4469  Frame Offset=fffff80000ba4d20  Stack Offset=fffff80000ba4d28
 >>> print pykd.getStack()[1]
 Frame: IP=fffff800026d4469  Return=7f  Frame Offset=fffff80000ba4d28  Stack Offset=fffff80000ba4d30
+>> print pykd.getStack()[2]
+Frame: IP=7f  Return=8  Frame Offset=fffff80000ba4d30  Stack Offset=fffff80000ba4d38
 >>> print pykd.getStack()[3]
 Frame: IP=8  Return=80050031  Frame Offset=fffff80000ba4d38  Stack Offset=fffff80000ba4d40
 >>> print pykd.getStack()[4]
@@ -437,6 +443,17 @@ Frame: IP=fffff88001127c0b  Return=0  Frame Offset=fffff80000ba4d50  Stack Offse
 >>> print pykd.getStack()[7]
 Traceback (most recent call last):
 
+   61 00003c0: 304e ba00 00f8 ffff return[1]=7f00 0000 0000 0000  0N..............
+   62 00003d0: ip[3]0800 0000 0000 0000 return[x]306a f009 80fa ffff  ........0j......
+   63 00003e0: stackoff[0] 284d ba00 00f8 ffff f04e ba00 00f8 ffff  (M.......N......
+   64 00003f0: f0d5 eb09 80fa ffff ip[x]306a f009 80fa ffff  ........0j......
+   65 0000400: ip[4]=3100 0580 0000 0000 return[4]=f806 0400 0000 0000  1...............
+   66 0000410: return[5]=0b7c 1201 80f8 ffff 80e2 2c05 80f8 ffff  .|........,.....
+   67 0000420: e0e0 2c05 80f8 ffff return[x]=006a f009 80fa ffff  ..,......j......
+   68 0000430: 0185 ef0b a0f8 ffff 58e1 2c05 80f8 ffff  ........X.,.....
+   69 0000440: ip[0]=004f 6d02 00f8 ffff 8a00 f800 0000 0000  .Om.............
+   70 0000450: 8074 9b0b a0f8 ffff return[6]=0000 0000 0000 0000  .t..............
+   7
 
     1 0000000: 5041 4745 4455 3634 0f00 0000 b01d 0000  PAGEDU64........
     2 0000010: 00d0 6d1e 0000 0000 20b2 9002 00f8 ffff  ..m..... .......
@@ -446,6 +463,25 @@ Traceback (most recent call last):
     6 0000050: f806 0400 0000 0000 0b7c 1201 80f8 ffff  .........|......
 
 
+0000000000000000000000000000000000000000
+304eba0000f8ffff
+7f00000000000000 = ip[2]
+0800000000000000 = ip[3]
+306af00980faffff = 
+28 4d ba 0000f8ffff = stack[0]
+f04eba0000f8ffff
+f0d5eb0980faffff = return[ ]
+306af00980faffff = return[ ]
+3100058000000000 = return[3]
+f806040000000000 = return[4]
+0b7c120180f8ffff = return[5]
+80e22c0580f8ffff
+e0e02c0580f8ffff
+006af00980faffff
+0185ef0ba0f8ffff
+58e12c0580f8ffff
+004f6d0200f8ffff 
+000000000000000000000000000000000000000000000000
 '''
 def parse_dump_header_64(arguments, file_dump):
     logger.info("64bits dump")
