@@ -264,12 +264,25 @@ HEADER64_STRUCT = (
     DataField("DUMP_0x2000_STRUCT", 4, DUMP_0x2000_STRUCT),
 );
 
+'''
+ 2231 0008b60: 80d4 0000 0000 0000 0000 0000 0000 0000  ................
+ 2232 0008b70: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2233 0008b80: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2234 0008b90: 0000 0000 0000 0000 0030 6602 00f8 ffff  .........0f.....
+ 2235 0008ba0: 0000 0000 0000 0000 00d0 5d00 0000 0000  ..........].....
+ 2236 0008bb0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2237 0008bc0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2238 0008bd0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2239 0008be0: 87b4 5400 0000 0000 00c6 5b4a 0000 0000  ..T.......[J....
+'''
 LOADED_MODULE64_STRUCT = (
     DataField("Path", 4),
-    DataField("Uknwn", 48),
+    DataField("Skip", 4+8+16+16+8),
     DataField("BaseAddress", 8),
     DataField("Uknwn", 8),
     DataField("Size", 8),
+    DataField("Skip", 3*16),
+    DataField("Uknwn", 16),
 );
 
 VS_FIXEDFILEINFO_STRUCT = (
@@ -550,7 +563,7 @@ e0e02c0580f8ffff
 004f6d0200f8ffff 
 000000000000000000000000000000000000000000000000
 
-2231 0008b60: 80d4 0000 0000 0000 0000 0000 0000 0000  ................
+ 2231 0008b60: 80d4 0000 0000 0000 0000 0000 0000 0000  ................
  2232 0008b70: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2233 0008b80: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2234 0008b90: 0000 0000 0000 0000 0030 6602 00f8 ffff  .........0f.....
@@ -638,14 +651,14 @@ def parse_dump_header_64(arguments, file_dump):
                 loaded_modules_names = parse_strings(arguments, file_dump, strings_offset)
                 for loaded_modules_offset in loaded_modules_names:
                     loaded_modules_name = loaded_modules_names[loaded_modules_offset]
-                    logger.info("Module: {0}:{1}".format(hex(loaded_modules_offset), loaded_modules_name))
+                    #logger.info("Module: {0}:{1}".format(hex(loaded_modules_offset), loaded_modules_name))
                 stack_addresses = parse_stack_frames64(arguments, file_dump, stack_offset)
                 loaded_modules = parse_modules(arguments, file_dump, modules_offset)
                 
                 for loaded_module in loaded_modules:
                     loaded_module_name_offset = loaded_module[0]
                     loaded_module_name = loaded_modules_names[loaded_module_name_offset]
-                    logger.info("{0}:name={1}, size={2}".format(loaded_module_name, hex(loaded_module[1]), loaded_module[2]))
+                    logger.info("{0}:address={1}, size={2}".format(loaded_module_name, hex(loaded_module[1]), loaded_module[2]))
                 logger.info("Stack: {0}".format(stack_addresses))
             else:
                 parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
