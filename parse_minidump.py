@@ -465,7 +465,7 @@ def parse_modules(arguments, file_dump, modules_offset_base):
     modules = []
     while (True):
         (name_offset, address, size) = parse_module(arguments, file_dump)
-        if (name_offset >= 0x8000):
+        if (name_offset >= 0xFFFF):
             break
         modules.append((name_offset, address, size))
         
