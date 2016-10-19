@@ -336,7 +336,7 @@ def parse_dump_header_64(arguments, file_dump):
                 (exception_code, exception_flags, exception_address) = parse_dump_header_exception_64(arguments, file_dump)
                 logger.info("Exception: code={0}, address={1}, flags={2}".format(hex(exception_code), hex(exception_address), hex(exception_flags)))
             else:
-                parse_dump_header_generic_struct(arguments, file_dump)
+                parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
     return physical_memory_presents;
                 
     
