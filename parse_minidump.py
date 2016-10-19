@@ -470,6 +470,11 @@ def parse_module(arguments, file_dump):
     return (module_name_offset, module_address, module_size)
     
             
+class LoadedModule:
+    def __init__(self, name_offset, address, size):
+        self.name_offset, self.address, self.size = name_offset, address, size
+        pass
+                
 def parse_modules(arguments, file_dump, modules_offset_base):
     
     file_dump_cursor = file_dump.tell()
@@ -482,7 +487,7 @@ def parse_modules(arguments, file_dump, modules_offset_base):
             break
         if (name_offset <= modules_offset_base):
             break
-        modules.append((name_offset, address, size))
+        modules.append(LoadedModule(name_offset, address, size))
         
     file_dump.seek(file_dump_cursor)
  
@@ -629,7 +634,17 @@ e0e02c0580f8ffff
  2286 0008ed0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2287 0008ee0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2288 0008ef0: 0000 0000 0000 0000 00e0 cf00 80f8 ffff  ................
-         '''
+'''
+
+def find_module_by_address(loaded_modules, address):
+    for loaded_module in loaded_modules:
+        start_address = loaded_module.address
+        end_address = start_address + loaded_module.size
+        if (address >= start_address) and (address <= end_address):
+            return (True, loaded_module)
+    
+    return (False, None)
+
 def parse_dump_header_64(arguments, file_dump):
     logger.info("64bits dump")
     skip = True
@@ -658,16 +673,18 @@ def parse_dump_header_64(arguments, file_dump):
                 loaded_modules = parse_modules(arguments, file_dump, modules_offset)
                 
                 for loaded_module in loaded_modules:
-                    loaded_module_name_offset = loaded_module[0]
-                    loaded_module_address = loaded_module[1]
-                    loaded_module_size = loaded_module[2]
-                    logger.debug("Loaded module: name_rva={0}, address={1}, size={2}".format(hex(loaded_module_name_offset), hex(loaded_module_address), hex(loaded_module_size)))
-                    loaded_module_name = loaded_modules_names[loaded_module_name_offset]
-                    logger.info("{0}:address={1}, size={2}".format(loaded_module_name, hex(loaded_module[1]), loaded_module[2]))
-                for stack_address in stack_addresses:
-                    logger.info("Stack: {0}".format(hex(stack_address)))
+                    logger.debug("Loaded module: name_rva={0}, address={1}, size={2}".format(hex(loaded_module.name_offset), hex(loaded_module.address), hex(loaded_module.size)))
+                    loaded_module_name = loaded_modules_names[loaded_module.name_offset]
+                    logger.info("{0}:address={1}, size={2}".format(loaded_module_name, hex(loaded_module.address), loaded_module.size))
             else:
                 parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
+    for stack_address in stack_addresses:
+        (module_found, loaded_module) = find_module_by_address(loaded_modules, stack_address)
+        if (module_found):
+            loaded_module_name = loaded_modules_names[loaded_module.name_offset]
+            logger.info("Stack: {0}, {1}".format(hex(stack_address), loaded_module_name))
+        else:
+            logger.info("Stack: {0}".format(hex(stack_address)))
     return physical_memory_presents;
                 
     
