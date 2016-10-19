@@ -362,7 +362,7 @@ def parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data
     (value, contains_ascii, value_ascii) = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0])
     if (value == '4547415045474150'):
         bytes_to_skip = data_field.size
-        logger.warn("Skip physical memory descriptors {0} bytes".format(bytes_to_skip))
+        logger.debug("Skip physical memory descriptors {0} bytes".format(bytes_to_skip))
         read_field(file_dump, bytes_to_skip-PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0].size)
         return False
     number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[1])
