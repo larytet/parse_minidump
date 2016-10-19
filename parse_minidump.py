@@ -187,7 +187,7 @@ EXCEPTION_RECORD64_STRUCT = (
 
 DUMP_0x2000_STRUCT = (
     DataField("Uknwn", 4),  # 2000
-    DataField("Uknwn", 4),  
+    DataField("StackRva", 4),  
     DataField("Uknwn", 8),
     
     DataField("Uknwn", 4), # 2010
@@ -202,10 +202,14 @@ DUMP_0x2000_STRUCT = (
 
     DataField("Uknwn", 4), # 2030
     DataField("Uknwn", 4),
-    DataField("Strings", 4),
+    DataField("StringsRva", 4),
     DataField("Uknwn", 4),
 );
 
+DUMP_STACK64_STRUCT = (
+    DataField("IP", 8),
+    DataField("Return", 8),
+);
                                     
 HEADER64_STRUCT = (
     DataField("Signature", 4),
@@ -345,13 +349,42 @@ def parse_dump_header_physical_blocks_32(arguments, file_dump):
     number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT[1])
 
 def parse_dump_header_0x2000(arguments, file_dump):
-    strings_offset = None
+    strings_offset, stack_offset = None, None
     for data_field in DUMP_0x2000_STRUCT:
         (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
-        if (data_field.name == "Strings"):
+        if (data_field.name == "StringsRva"):
             strings_offset = int(value, 16)
             logger.debug("Loaded modules names at offset {0}".format(hex(strings_offset)))
-    return (strings_offset)
+        if (data_field.name == "StackRva"):
+            stack_offset = int(value, 16)
+            logger.debug("Stack frames at offset {0}".format(hex(stack_offset)))
+    return (strings_offset, stack_offset)
+
+def parse_stack_frame64(arguments, file_dump):
+    file_dump_cursor = file_dump.tell()
+    for data_field in DUMP_STACK64_STRUCT:
+        (value, contains_ascii, value_ascii) = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0])
+        if (data_field.name == "IP"):
+            ip_address = int(value, 16)
+        if (data_field.name == "Return"):
+            return_address = int(value, 16)
+            
+    return (ip_address, return_address)
+
+
+def parse_stack_frames64(arguments, file_dump, stack_offset):
+    file_dump_cursor = file_dump.tell()
+    
+    file_dump.seek(stack_offset)
+    # End of the strings section is 16 bits zero
+    while (True):
+        (ip_address, return_address) = parse_stack_frame64(arguments, file_dump)
+        logger.info("Stack frame IP={0}, Return={return_address}");
+        if (ip_address == 0):
+            break
+        
+        
+    file_dump.seek(file_dump_cursor)
 
 def parse_strings(arguments, file_dump, strings_offset):
     file_dump_cursor = file_dump.tell()
@@ -404,6 +437,15 @@ Frame: IP=fffff88001127c0b  Return=0  Frame Offset=fffff80000ba4d50  Stack Offse
 >>> print pykd.getStack()[7]
 Traceback (most recent call last):
 
+
+    1 0000000: 5041 4745 4455 3634 0f00 0000 b01d 0000  PAGEDU64........
+    2 0000010: 00d0 6d1e 0000 0000 20b2 9002 00f8 ffff  ..m..... .......
+    3 0000020: 500e 8a02 00f8 ffff 302b 8802 00f8 ffff  P.......0+......
+    4 0000030: 6486 0000 0100 0000 7f00 0000 5041 4745  d...........PAGE
+    5 0000040: 0800 0000 0000 0000 3100 0580 0000 0000  ........1.......
+    6 0000050: f806 0400 0000 0000 0b7c 1201 80f8 ffff  .........|......
+
+
 '''
 def parse_dump_header_64(arguments, file_dump):
     logger.info("64bits dump")
@@ -424,8 +466,9 @@ def parse_dump_header_64(arguments, file_dump):
                 (exception_code, exception_flags, exception_address) = parse_dump_header_exception_64(arguments, file_dump)
                 logger.info("Exception: code={0}, address={1}, flags={2}".format(hex(exception_code), hex(exception_address), hex(exception_flags)))
             elif (data_field.name == "DUMP_0x2000_STRUCT"):
-                strings_offset = parse_dump_header_0x2000(arguments, file_dump)
+                strings_offset, stack_offset = parse_dump_header_0x2000(arguments, file_dump)
                 parse_strings(arguments, file_dump, strings_offset)
+                parse_stack_frames64(arguments, file_dump, stack_offset)
             else:
                 parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
     return physical_memory_presents;
