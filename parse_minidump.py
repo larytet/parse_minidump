@@ -384,7 +384,27 @@ def parse_strings(arguments, file_dump, strings_offset):
         
     file_dump.seek(file_dump_cursor)
         
+'''
+ print pykd.getStack()
+[<pykd.pykd.stackFrame object at 0x0000000002CBDB38>, <pykd.pykd.stackFrame object at 0x0000000002D16278>, <pykd.pykd.stackFrame object at 0x000000000
+2D162E8>, <pykd.pykd.stackFrame object at 0x0000000002D16358>, <pykd.pykd.stackFrame object at 0x0000000002D163C8>, <pykd.pykd.stackFrame object at 0x
+0000000002D16438>, <pykd.pykd.stackFrame object at 0x0000000002D164A8>]
+>>> print pykd.getStack()[0]
+Frame: IP=fffff800026d4f00  Return=fffff800026d4469  Frame Offset=fffff80000ba4d20  Stack Offset=fffff80000ba4d28
+>>> print pykd.getStack()[1]
+Frame: IP=fffff800026d4469  Return=7f  Frame Offset=fffff80000ba4d28  Stack Offset=fffff80000ba4d30
+>>> print pykd.getStack()[3]
+Frame: IP=8  Return=80050031  Frame Offset=fffff80000ba4d38  Stack Offset=fffff80000ba4d40
+>>> print pykd.getStack()[4]
+Frame: IP=80050031  Return=406f8  Frame Offset=fffff80000ba4d40  Stack Offset=fffff80000ba4d48
+>>> print pykd.getStack()[5]
+Frame: IP=406f8  Return=fffff88001127c0b  Frame Offset=fffff80000ba4d48  Stack Offset=fffff80000ba4d50
+>>> print pykd.getStack()[6]
+Frame: IP=fffff88001127c0b  Return=0  Frame Offset=fffff80000ba4d50  Stack Offset=fffff80000ba4d58
+>>> print pykd.getStack()[7]
+Traceback (most recent call last):
 
+'''
 def parse_dump_header_64(arguments, file_dump):
     logger.info("64bits dump")
     skip = True
