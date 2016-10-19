@@ -144,6 +144,39 @@ PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT = (
     DataField("Run", 256, PHYSICAL_MEMORY_RUN64_STRUCT)
 );
 
+MINIDUMP_HEADER_STRUCT = (
+    DataField("Signature", 4),
+    DataField("ValidDump", 4),
+    DataField("NumberOfStreams", 4),                  # The number of streams in the minidump directory.
+    DataField("StreamDirectoryRva", 4),   # The directory is an array of MINIDUMP_DIRECTORY structures. 
+    DataField("CheckSum", 4),
+    DataField("TimeDateStamp", 4), 
+    DataField("Flags", 8)               # MINIDUMP_TYPE
+);
+
+
+# from file wdm.h
+EXCEPTION_MAXIMUM_PARAMETERS = 15 # maximum number of exception parameters
+
+EXCEPTION_RECORD32_STRUCT = (
+    DataField("ExceptionCode", 4),
+    DataField("ExceptionFlags", 4),
+    DataField("ExceptionRecord", 4),
+    DataField("ExceptionAddress", 4),
+    DataField("NumberParameters", 4),
+    DataField("ExceptionInformation", 4*EXCEPTION_MAXIMUM_PARAMETERS)
+);
+
+EXCEPTION_RECORD64_STRUCT = (
+    DataField("ExceptionCode", 4),
+    DataField("ExceptionFlags", 4),
+    DataField("ExceptionRecord", 8),
+    DataField("ExceptionAddress", 8),
+    DataField("NumberParameters", 4),
+    DataField("__unusedAlignment", 4),
+    DataField("ExceptionInformation", 8*EXCEPTION_MAXIMUM_PARAMETERS)
+);
+                                    
 HEADER64_STRUCT = (
     DataField("Signature", 4),
     DataField("ValidDump", 4),
@@ -156,12 +189,14 @@ HEADER64_STRUCT = (
     DataField("MachineImageType", 4),
     DataField("NumberProcessors", 4),
     DataField("BugCheckCode", 4),
-    DataField("Skip", 4),
+    DataField("Skip", 8),
     DataField("BugCheckParameter", 4*8),
-    DataField("Skip", 0x20),
+    DataField("Skip", 0x40),
     DataField("KdDebuggerDataBlock", 8),
-    DataField("PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT),
-    DataField("Skip", 0xf00),
+    DataField("PhysicalMemoryBlockBuffer", 0x2C0, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT),
+    DataField("ContextRecord", 3000),
+    DataField("Exception", 0x98, EXCEPTION_RECORD64_STRUCT),
+    DataField("DumpType", 4),
     # size is 0x2000 bytes 
 );
 
