@@ -204,8 +204,8 @@ DUMP_0x2000_STRUCT = (
     DataField("Uknwn", 4),
 
     DataField("Uknwn", 4), 
-    DataField("Uknwn", 4),
     DataField("StringsRva", 4),
+    DataField("Uknwn", 4),
     DataField("Uknwn", 4),
 );
 
@@ -484,7 +484,8 @@ Traceback (most recent call last):
     5 0000040: 0800 0000 0000 0000 3100 0580 0000 0000  ........1.......
     6 0000050: f806 0400 0000 0000 0b7c 1201 80f8 ffff  .........|......
 
-line 2799 0x14780
+084714
+line 2799 0x14780 0x14708
 0000000000000000000000000000000000000000
 304eba0000f8ffff
 7f00000000000000 = ip[2]
