@@ -204,9 +204,9 @@ DUMP_0x2000_STRUCT = (
     DataField("Uknwn", 4),
 
     DataField("Uknwn", 4), 
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
     DataField("StringsRva", 4),
-    DataField("Uknwn", 4),
-    DataField("Uknwn", 4),
 );
 
 DUMP_STACK64_STRUCT = (
