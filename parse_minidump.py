@@ -377,10 +377,16 @@ def parse_stack_frames64(arguments, file_dump, stack_offset):
     
     stack_addresses = []
     for data_field in DUMP_STACK64_STRUCT:
-        (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
         if (data_field.name == "Address"):
-            stack_address = int(value, 16)
-            stack_addresses.append(stack_address)
+            while (True):
+                (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+                stack_address = int(value, 16)
+                stack_addresses.append(stack_address)
+                if (stack_address == 0):
+                    break
+        else:
+            (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+
         
         
     file_dump.seek(file_dump_cursor)
