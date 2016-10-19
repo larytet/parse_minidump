@@ -195,7 +195,7 @@ HEADER64_STRUCT = (
     DataField("MachineImageType", 4),
     DataField("NumberProcessors", 4),
     DataField("BugCheckCode", 4),
-    DataField("Skip", 8),
+    DataField("Unknown", 8),
     DataField("BugCheckParameter", 4*8),
     DataField("Skip", 0x40),
     DataField("KdDebuggerDataBlock", 8),
