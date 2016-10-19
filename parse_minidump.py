@@ -264,6 +264,14 @@ HEADER64_STRUCT = (
     DataField("DUMP_0x2000_STRUCT", 4, DUMP_0x2000_STRUCT),
 );
 
+LOADED_MODULE64_STRUCT = (
+    DataField("Path", 4),
+    DataField("Uknwn", 48),
+    DataField("BaseAddress", 8),
+    DataField("Uknwn", 8),
+    DataField("Size", 8),
+);
+
 VS_FIXEDFILEINFO_STRUCT = (
     DataField("dwSignature", 4),
     DataField("dwStrucVersion", 4),
@@ -375,7 +383,10 @@ def parse_dump_header_0x2000(arguments, file_dump):
         if (data_field.name == "StackRva"):
             stack_offset = int(value, 16)
             logger.debug("Stack frames at offset {0}".format(hex(stack_offset)))
-    return (strings_offset, stack_offset)
+        if (data_field.name == "LoadedModules"):
+            modules_offset = int(value, 16)
+            logger.debug("Loaded modules at offset {0}".format(hex(modules_offset)))
+    return (strings_offset, stack_offset, modules_offset)
 
 def parse_stack_frames64(arguments, file_dump, stack_offset):
     file_dump_cursor = file_dump.tell()
@@ -405,7 +416,7 @@ def parse_strings(arguments, file_dump, string_offset_base):
     file_dump.seek(string_offset_base)
     # End of the strings section is 16 bits zero
     strings_offset = string_offset_base
-    strings = []
+    strings = {}
     while (True):
         file_offset = file_dump.tell()
         cursor_tmp = file_dump.tell()
@@ -425,13 +436,44 @@ def parse_strings(arguments, file_dump, string_offset_base):
         bytes_to_read = (bytes_to_read + 7) & (~7)
         string = read_field(file_dump, bytes_to_read-4)  # I read 4 bytes of length already  
         (contains_ascii, string_ascii) = data_to_ascii(string, 256)
-        strings.append((string_ascii, strings_offset))
+        strings[strings_offset] = string_ascii
         #logger.debug("{0}: length={1},bytes={2},'{3}'".format(hex(file_offset), length, bytes_to_read, string_ascii))
         
     file_dump.seek(file_dump_cursor)
     
     return strings
         
+def parse_module(arguments, file_dump):
+    module_name_offset, module_address, module_size = None, None, None
+    for data_field in LOADED_MODULE64_STRUCT:
+        (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+        if (data_field.name == "Path"):
+            module_name_offset = int(value, 16)
+        if (data_field.name == "BaseAddress"):
+            module_address = int(value, 16)
+        if (data_field.name == "Size"):
+            module_size = int(value, 16)
+            
+    return (module_name_offset, module_address, module_size)
+    
+            
+def parse_modules(arguments, file_dump, modules_offset_base):
+    
+    file_dump_cursor = file_dump.tell()
+    
+    file_dump.seek(modules_offset_base)
+    modules = []
+    while (True):
+        (name_offset, address, size) = parse_module(arguments, file_dump)
+        if (name_offset >= 0x8000):
+            break
+        modules.append(name_offset, address, size)
+        
+    file_dump.seek(file_dump_cursor)
+ 
+    return modules
+        
+
 '''
  print pykd.getStack()
 [<pykd.pykd.stackFrame object at 0x0000000002CBDB38>, <pykd.pykd.stackFrame object at 0x0000000002D16278>, 
@@ -508,7 +550,7 @@ e0e02c0580f8ffff
 004f6d0200f8ffff 
 000000000000000000000000000000000000000000000000
 
- 2231 0008b60: 80d4 0000 0000 0000 0000 0000 0000 0000  ................
+2231 0008b60: 80d4 0000 0000 0000 0000 0000 0000 0000  ................
  2232 0008b70: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2233 0008b80: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2234 0008b90: 0000 0000 0000 0000 0030 6602 00f8 ffff  .........0f.....
@@ -517,6 +559,7 @@ e0e02c0580f8ffff
  2237 0008bc0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2238 0008bd0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2239 0008be0: 87b4 5400 0000 0000 00c6 5b4a 0000 0000  ..T.......[J....
+ 
  2240 0008bf0: c8d4 0000 0000 0000 0000 0000 0000 0000  ................
  2241 0008c00: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2242 0008c10: 0000 0000 0000 0000 0000 0000 0000 0000  ................
@@ -526,6 +569,7 @@ e0e02c0580f8ffff
  2246 0008c50: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2247 0008c60: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2248 0008c70: 36bd 0400 0000 0000 08df 5b4a 0000 0000  6.........[J....
+ 
  2249 0008c80: 08d5 0000 0000 0000 0000 0000 0000 0000  ................
  2250 0008c90: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2251 0008ca0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
@@ -535,6 +579,7 @@ e0e02c0580f8ffff
  2255 0008ce0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2256 0008cf0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2257 0008d00: 6393 0000 0000 0000 dbdf 5b4a 0000 0000  c.........[J....
+ 
  2258 0008d10: 50d5 0000 0000 0000 0000 0000 0000 0000  P...............
  2259 0008d20: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2260 0008d30: 0000 0000 0000 0000 0000 0000 0000 0000  ................
@@ -544,11 +589,32 @@ e0e02c0580f8ffff
  2264 0008d70: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2265 0008d80: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2266 0008d90: c780 0400 0000 0000 66df 5b4a 0000 0000  ........f.[J....
+ 
  2267 0008da0: b8d5 0000 0000 0000 0000 0000 0000 0000  ................
  2268 0008db0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
  2269 0008dc0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
- 2
-'''
+ 2270 0008dd0: 0000 0000 0000 0000 00c0 c800 80f8 ffff  ................
+ 2271 0008de0: 0000 0000 0000 0000 0040 0100 0000 0000  .........@......
+ 2272 0008df0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2273 0008e00: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2274 0008e10: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2275 0008e20: 62f7 0000 0000 0000 27e0 5b4a 0000 0000  b.......'.[J....
+ 
+ 2276 0008e30: 00d6 0000 0000 0000 0000 0000 0000 0000  ................
+ 2277 0008e40: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2278 0008e50: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2279 0008e60: 0000 0000 0000 0000 0000 ca00 80f8 ffff  ................
+ 2280 0008e70: 0000 0000 0000 0000 00e0 0500 0000 0000  ................
+ 2281 0008e80: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2282 0008e90: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2283 0008ea0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2284 0008eb0: 465c 0600 0000 0000 1dc1 5b4a 0000 0000  F\........[J....
+ 
+ 2285 0008ec0: 40d6 0000 0000 0000 0000 0000 0000 0000  @...............
+ 2286 0008ed0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2287 0008ee0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+ 2288 0008ef0: 0000 0000 0000 0000 00e0 cf00 80f8 ffff  ................
+         '''
 def parse_dump_header_64(arguments, file_dump):
     logger.info("64bits dump")
     skip = True
@@ -568,11 +634,12 @@ def parse_dump_header_64(arguments, file_dump):
                 (exception_code, exception_flags, exception_address) = parse_dump_header_exception_64(arguments, file_dump)
                 logger.info("Exception: code={0}, address={1}, flags={2}".format(hex(exception_code), hex(exception_address), hex(exception_flags)))
             elif (data_field.name == "DUMP_0x2000_STRUCT"):
-                strings_offset, stack_offset = parse_dump_header_0x2000(arguments, file_dump)
+                strings_offset, stack_offset, modules_offset = parse_dump_header_0x2000(arguments, file_dump)
                 loaded_modules_names = parse_strings(arguments, file_dump, strings_offset)
                 for (loaded_modules_name, loaded_modules_offset) in loaded_modules_names:
                     logger.info("Module: {0}:{1}".format(hex(loaded_modules_offset), loaded_modules_name))
                 stack_addresses = parse_stack_frames64(arguments, file_dump, stack_offset)
+                loaded_modules = parse_modules(arguments, file_dump, modules_offset)
                 logger.info("Stack: {0}".format(stack_addresses))
             else:
                 parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
