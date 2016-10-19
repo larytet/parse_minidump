@@ -270,6 +270,7 @@ def parse_dump_header_physical_blocks_32(arguments, file_dump):
 def parse_dump_header_64(arguments, file_dump):
     logger.info("64bits dump")
     skip = True
+    physical_memory_presents = False
         
     for data_field in HEADER64_STRUCT:
         if (data_field.name == "MajorVersion"):
@@ -280,10 +281,11 @@ def parse_dump_header_64(arguments, file_dump):
             (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
         else:
             if (data_field.name == "PhysicalMemoryBlockBuffer"):
-                parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data_field)
+                physical_memory_presents = parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data_field)
             if (data_field.name == "Exception"):
                 (exception_code, exception_flags, exception_address) = parse_dump_header_exception_64(arguments, file_dump)
                 logger.info("Exception: code={0}, address={1}, flags={2}".format(hex(exception_code), hex(exception_address), hex(exception_flags)))
+    return physical_memory_presents;
                 
     
 def parse_dump_header_32(arguments, file_dump):
@@ -313,12 +315,15 @@ def parse_dump_header(arguments, file_dump):
             if (data_field.name == "ValidDump"):
                 dump_type_64 = (value_ascii == "DU64") 
                 if (dump_type_64):
-                    parse_dump_header_64(arguments, file_dump)
+                    physical_memory_presents = parse_dump_header_64(arguments, file_dump)
                 else:
-                    parse_dump_header_32(arguments, file_dump)
+                    physical_memory_presents = parse_dump_header_32(arguments, file_dump)
             
                 break
             
+    if (not physical_memory_presents):
+        logger.info("No physical memory presents in the dump file")
+
             
     return dump_type_64
                  
