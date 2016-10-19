@@ -229,11 +229,11 @@ def parse_field(file, data_field):
     (contains_ascii, value_ascii) = data_to_ascii(data)
     if (data_field.name != "Skip"):
         if (contains_ascii):
-            logger.info("{3}:{0} = {1} ({2})".format(data_field.name, value, value_ascii, hex(file_offset)))
+            logger.debug("{3}:{0} = {1} ({2})".format(data_field.name, value, value_ascii, hex(file_offset)))
         else:
-            logger.info("{2}:{0} = {1}".format(data_field.name, value, hex(file_offset)))
+            logger.debug("{2}:{0} = {1}".format(data_field.name, value, hex(file_offset)))
     else:
-        logger.info("Skip {0} bytes".format(data_field.size))
+        logger.debug("Skip {0} bytes".format(data_field.size))
         
         
     return (value, contains_ascii, value_ascii)
@@ -242,10 +242,11 @@ def parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data
     (value, contains_ascii, value_ascii) = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0])
     if (value == '4547415045474150'):
         bytes_to_skip = data_field.size
-        logger.info("Skip PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT {0} bytes".format(bytes_to_skip))
+        logger.warn("Skip physical memory descriptors {0} bytes".format(bytes_to_skip))
         read_field(file_dump, bytes_to_skip-PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0].size)
-        return 
+        return False
     number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[1])
+    return False
 
 def parse_dump_header_exception_64(arguments, file_dump):
     (exception_code, exception_flags, exception_address) = (None, None, None)
