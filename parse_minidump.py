@@ -216,8 +216,8 @@ HEADER64_STRUCT = (
     DataField("Unused1", 1),
     DataField("KdSecondaryVersion", 1),
     DataField("Unused2", 2),
-    DataField("Reserved", 4096),
-    # size is 0x2000 bytes 
+    DataField("Reserved", 0xfb4),
+    # Offset  0x2000  
 );
 
 VS_FIXEDFILEINFO_STRUCT = (
@@ -335,7 +335,7 @@ def parse_dump_header_64(arguments, file_dump):
             elif (data_field.name == "Exception"):
                 (exception_code, exception_flags, exception_address) = parse_dump_header_exception_64(arguments, file_dump)
                 logger.info("Exception: code={0}, address={1}, flags={2}".format(hex(exception_code), hex(exception_address), hex(exception_flags)))
-            elif:
+            else:
                 parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
     return physical_memory_presents;
                 
