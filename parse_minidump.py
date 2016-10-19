@@ -248,8 +248,17 @@ def parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data
     number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[1])
 
 def parse_dump_header_exception_64(arguments, file_dump):
+    (exception_code, exception_flags, exception_address) = (None, None, None)
     for data_field in EXCEPTION_RECORD64_STRUCT:
         (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+        if (data_field.name == "ExceptionCode"):
+            exception_code = int(value, 16)
+        if (data_field.name == "ExceptionFlags"):
+            exception_flags = int(value, 16)
+        if (data_field.name == "ExceptionAddress"):
+            exception_address = int(value, 16)
+            
+    return (exception_code, exception_flags, exception_address)
         
 
 def parse_dump_header_physical_blocks_32(arguments, file_dump):
@@ -272,7 +281,9 @@ def parse_dump_header_64(arguments, file_dump):
             if (data_field.name == "PhysicalMemoryBlockBuffer"):
                 parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data_field)
             if (data_field.name == "Exception"):
-                parse_dump_header_exception_64(arguments, file_dump)
+                (exception_code, exception_flags, exception_address) = parse_dump_header_exception_64(arguments, file_dump)
+                logger.info("Exception: code={0}, address={1}, flags={2}".format(hex(exception_code), hex(exception_address), hex(exception_flags)))
+                
     
 def parse_dump_header_32(arguments, file_dump):
     logger.info("32bits dump")
