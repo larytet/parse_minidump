@@ -349,31 +349,40 @@ def parse_dump_header_0x2000(arguments, file_dump):
     for data_field in DUMP_0x2000_STRUCT:
         (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
         if (data_field.name == "Strings"):
-            strings_offset = int(value, 0x16)
+            strings_offset = int(value, 16)
             logger.debug("Loaded modules names at offset {0}".format(hex(strings_offset)))
     return (strings_offset)
 
 def parse_strings(arguments, file_dump, strings_offset):
+    file_dump_cursor = file_dump.tell()
+    
+    file_dump.seek(strings_offset)
     # End of the strings section is 16 bits zero
     while (True):
         file_offset = file_dump.tell()
+        cursor_tmp = file_dump.tell()
         data = read_field(file_dump, 4)
         length_hex = data_to_hex(data)
         length = int(length_hex, 16)
         if (length == 0):
+            logger.debug("{0}: Length is zero".format(hex(strings_offset)))
             break
-        if (length > 128):
+        if (length > 256):
+            logger.debug("{0}:Length is {1} bytes".format(hex(cursor_tmp), length))
             break
-        string = read_field(file_dump, length)
-        (contains_ascii, value_ascii) = data_to_ascii(data)
-        logger.debug("{0}: '{1}'".format(hex(file_offset, value_ascii)))
+        string = read_field(file_dump, 2*length)
+        (contains_ascii, string_ascii) = data_to_ascii(string, 256)
+        logger.debug("{0}: length={1},'{2}'".format(hex(file_offset), length, string_ascii))
+        
+        cursor_tmp = file_dump.tell()
         data = read_field(file_dump, 2) # I expect zero terminaiton here
         zero_hex = data_to_hex(data)
         zero = int(zero_hex, 16)  
         if (zero != 0):
-            logger.debug("Missing zero termination - got {0} instead".format(hex(zero_hex)))
+            logger.debug("{0}:Missing zero termination - got {1} instead".format(hex(cursor_tmp), zero_hex))
             break
-        (contains_ascii, value_ascii) = data_to_ascii(data)
+        
+    file_dump.seek(file_dump_cursor)
         
 
 def parse_dump_header_64(arguments, file_dump):
