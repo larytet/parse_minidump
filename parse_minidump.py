@@ -731,7 +731,7 @@ if __name__ == '__main__':
 
     logging.basicConfig()
     logger = logging.getLogger('parser')
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     is_parse = arguments["parse"]
 
