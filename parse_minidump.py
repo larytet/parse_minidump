@@ -190,7 +190,7 @@ EXCEPTION_RECORD64_STRUCT = (
 
 DUMP_0x2000_STRUCT = (
     DataField("Uknwn", 4),  # 2000
-    DataField("StackRva", 4),  
+    DataField("StackRva", 4), # DumbBlob (hardware?)  
     DataField("Uknwn", 8),
     
     DataField("Uknwn", 4), # 2010
