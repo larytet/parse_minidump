@@ -195,9 +195,9 @@ HEADER64_STRUCT = (
     DataField("MachineImageType", 4),
     DataField("NumberProcessors", 4),
     DataField("BugCheckCode", 4),
-    DataField("Unknown", 8),
+    DataField("Unknown", 4),
     DataField("BugCheckParameter", 4*8),
-    DataField("Skip", 0x40),
+    DataField("Skip", 0x20),
     DataField("KdDebuggerDataBlock", 8),
     DataField("PhysicalMemoryBlockBuffer", 0x2C0, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT),
     DataField("ContextRecord", 3000),
@@ -226,8 +226,13 @@ def parse_field(file, data_field):
         
     return (value, contains_ascii, value_ascii)
 
-def parse_dump_header_physical_blocks_64(arguments, file_dump):
-    number_of_runs = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0])
+def parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data_field):
+    (value, contains_ascii, value_ascii) = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0])
+    if (value == '4547415045474150'):
+        bytes_to_skip = data_field.size
+        logger.info("Skip PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT {0} bytes".format(bytes_to_skip))
+        read_field(file_dump, bytes_to_skip-PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0].size)
+        return 
     number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[1])
 
 def parse_dump_header_physical_blocks_32(arguments, file_dump):
@@ -247,8 +252,8 @@ def parse_dump_header_64(arguments, file_dump):
         if (not data_field.is_struct):
             (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
         else:
-            if (data_field.name == "PhysicalMemoryBlock"):
-                parse_dump_header_physical_blocks_64(arguments, file_dump)
+            if (data_field.name == "PhysicalMemoryBlockBuffer"):
+                parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data_field)
     
 def parse_dump_header_32(arguments, file_dump):
     logger.info("32bits dump")
