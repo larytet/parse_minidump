@@ -203,6 +203,18 @@ HEADER64_STRUCT = (
     DataField("ContextRecord", 3000),
     DataField("Exception", 0x98, EXCEPTION_RECORD64_STRUCT),
     DataField("DumpType", 4),
+    DataField("RequiredDumpSpace", 8),
+    DataField("SystemTime", 8),
+    DataField("Comment", 128),
+    DataField("SystemUpTime", 8),
+    DataField("MiniDumpFields", 4),
+    DataField("SecondaryDataState", 4),
+    DataField("ProductType", 4),
+    DataField("WriterStatus", 4),
+    DataField("Unused1", 1),
+    DataField("KdSecondaryVersion", 1),
+    DataField("Unused2", 2),
+    DataField("Reserved", 4096),
     # size is 0x2000 bytes 
 );
 
