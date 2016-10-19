@@ -256,8 +256,7 @@ MINIDUMP_MODULE64_STRUCT = (
 
 MINIDUMP_MODULE_LIST_STRUCT = (
   DataField("NumberOfModules", 4),
-  ULONG32         NumberOfModules;
-  DataField("Modules", 4, MINIDUMP_MODULE),
+  DataField("Modules", 4, MINIDUMP_MODULE64_STRUCT)
 );
 
 def read_field(file, size):
