@@ -202,7 +202,7 @@ HEADER64_STRUCT = (
     DataField("PhysicalMemoryBlockBuffer", 0x2C0, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT),
     DataField("ContextRecord", 3000),
     DataField("Exception", 0x98, EXCEPTION_RECORD64_STRUCT),
-    DataField("DumpType", 4),
+    DataField("DumpType", 8),
     DataField("RequiredDumpSpace", 8),
     DataField("SystemTime", 8),
     DataField("Comment", 128),
@@ -247,6 +247,11 @@ def parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data
         return 
     number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[1])
 
+def parse_dump_header_exception_64(arguments, file_dump):
+    for data_field in EXCEPTION_RECORD64_STRUCT:
+        (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+        
+
 def parse_dump_header_physical_blocks_32(arguments, file_dump):
     number_of_runs = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT[0])
     number_of_pages = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT[1])
@@ -266,6 +271,8 @@ def parse_dump_header_64(arguments, file_dump):
         else:
             if (data_field.name == "PhysicalMemoryBlockBuffer"):
                 parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data_field)
+            if (data_field.name == "Exception"):
+                parse_dump_header_exception_64(arguments, file_dump)
     
 def parse_dump_header_32(arguments, file_dump):
     logger.info("32bits dump")
