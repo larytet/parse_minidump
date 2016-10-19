@@ -204,7 +204,7 @@ DUMP_0x2000_STRUCT = (
     DataField("Uknwn", 4),
 
     DataField("Uknwn", 4), 
-    DataField("Uknwn", 4),
+    DataField("LoadedModules", 4),
     DataField("Uknwn", 4),
     DataField("StringsRva", 4),
 );
@@ -405,11 +405,11 @@ def parse_strings(arguments, file_dump, string_offset_base):
     file_dump.seek(string_offset_base)
     # End of the strings section is 16 bits zero
     strings_offset = string_offset_base
-    strings = ()
+    strings = []
     while (True):
         file_offset = file_dump.tell()
         cursor_tmp = file_dump.tell()
-        strings_offset = cursor_tmp - string_offset_base
+        strings_offset = cursor_tmp # - string_offset_base
         data = read_field(file_dump, 4)
         length_hex = data_to_hex(data)
         length = int(length_hex, 16)
@@ -426,7 +426,7 @@ def parse_strings(arguments, file_dump, string_offset_base):
         string = read_field(file_dump, bytes_to_read-4)  # I read 4 bytes of length already  
         (contains_ascii, string_ascii) = data_to_ascii(string, 256)
         strings.append((string_ascii, strings_offset))
-        logger.debug("{0}: length={1},bytes={2},'{3}'".format(hex(file_offset), length, bytes_to_read, string_ascii))
+        #logger.debug("{0}: length={1},bytes={2},'{3}'".format(hex(file_offset), length, bytes_to_read, string_ascii))
         
     file_dump.seek(file_dump_cursor)
     
@@ -528,8 +528,9 @@ def parse_dump_header_64(arguments, file_dump):
                 logger.info("Exception: code={0}, address={1}, flags={2}".format(hex(exception_code), hex(exception_address), hex(exception_flags)))
             elif (data_field.name == "DUMP_0x2000_STRUCT"):
                 strings_offset, stack_offset = parse_dump_header_0x2000(arguments, file_dump)
-                modules_names = parse_strings(arguments, file_dump, strings_offset)
-                logger.info("Modules: {0}".format(modules_names))
+                loaded_modules_names = parse_strings(arguments, file_dump, strings_offset)
+                for (loaded_modules_name, loaded_modules_offset) in loaded_modules_names:
+                    logger.info("Module: {0}:{1}".format(hex(loaded_modules_offset), loaded_modules_name))
                 stack_addresses = parse_stack_frames64(arguments, file_dump, stack_offset)
                 logger.info("Stack: {0}".format(stack_addresses))
             else:
