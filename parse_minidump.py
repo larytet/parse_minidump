@@ -425,9 +425,10 @@ def parse_strings(arguments, file_dump, strings_offset):
         
 '''
  print pykd.getStack()
-[<pykd.pykd.stackFrame object at 0x0000000002CBDB38>, <pykd.pykd.stackFrame object at 0x0000000002D16278>, <pykd.pykd.stackFrame object at 0x000000000
-2D162E8>, <pykd.pykd.stackFrame object at 0x0000000002D16358>, <pykd.pykd.stackFrame object at 0x0000000002D163C8>, <pykd.pykd.stackFrame object at 0x
-0000000002D16438>, <pykd.pykd.stackFrame object at 0x0000000002D164A8>]
+[<pykd.pykd.stackFrame object at 0x0000000002CBDB38>, <pykd.pykd.stackFrame object at 0x0000000002D16278>, 
+<pykd.pykd.stackFrame object at 0x0000000002D162E8>, <pykd.pykd.stackFrame object at 0x0000000002D16358>, 
+<pykd.pykd.stackFrame object at 0x0000000002D163C8>, <pykd.pykd.stackFrame object at 0x0000000002D16438>, 
+<pykd.pykd.stackFrame object at 0x0000000002D164A8>]
 >>> print pykd.getStack()[0]
 Frame: IP=fffff800026d4f00  Return=fffff800026d4469  Frame Offset=fffff80000ba4d20  Stack Offset=fffff80000ba4d28
 >>> print pykd.getStack()[1]
