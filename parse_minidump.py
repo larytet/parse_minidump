@@ -675,7 +675,7 @@ def parse_dump_header_64(arguments, file_dump):
                 for loaded_module in loaded_modules:
                     logger.debug("Loaded module: name_rva={0}, address={1}, size={2}".format(hex(loaded_module.name_offset), hex(loaded_module.address), hex(loaded_module.size)))
                     loaded_module_name = loaded_modules_names[loaded_module.name_offset]
-                    logger.info("{0}:address={1}, size={2}".format(loaded_module_name, hex(loaded_module.address), loaded_module.size))
+                    logger.debug("{0}:address={1}, size={2}".format(loaded_module_name, hex(loaded_module.address), loaded_module.size))
             else:
                 parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
     for stack_address in stack_addresses:
