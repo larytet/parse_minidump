@@ -467,7 +467,7 @@ def parse_modules(arguments, file_dump, modules_offset_base):
         (name_offset, address, size) = parse_module(arguments, file_dump)
         if (name_offset >= 0x8000):
             break
-        modules.append(name_offset, address, size)
+        modules.append((name_offset, address, size))
         
     file_dump.seek(file_dump_cursor)
  
@@ -636,10 +636,16 @@ def parse_dump_header_64(arguments, file_dump):
             elif (data_field.name == "DUMP_0x2000_STRUCT"):
                 strings_offset, stack_offset, modules_offset = parse_dump_header_0x2000(arguments, file_dump)
                 loaded_modules_names = parse_strings(arguments, file_dump, strings_offset)
-                for (loaded_modules_name, loaded_modules_offset) in loaded_modules_names:
+                for loaded_modules_offset in loaded_modules_names:
+                    loaded_modules_name = loaded_modules_names[loaded_modules_offset]
                     logger.info("Module: {0}:{1}".format(hex(loaded_modules_offset), loaded_modules_name))
                 stack_addresses = parse_stack_frames64(arguments, file_dump, stack_offset)
                 loaded_modules = parse_modules(arguments, file_dump, modules_offset)
+                
+                for loaded_module in loaded_modules:
+                    loaded_module_name_offset = loaded_module[0]
+                    loaded_module_name = loaded_modules_names[loaded_module_name_offset]
+                    logger.info("{0}:name={1}, size={2}".format(loaded_module_name, hex(loaded_module[1]), loaded_module[2]))
                 logger.info("Stack: {0}".format(stack_addresses))
             else:
                 parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
