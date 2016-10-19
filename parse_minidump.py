@@ -190,8 +190,8 @@ EXCEPTION_RECORD64_STRUCT = (
 
 DUMP_0x2000_STRUCT = (
     DataField("Uknwn", 4),  # 2000
-    DataField("StackRva", 4), # DumbBlob (hardware?)  
-    DataField("Uknwn", 8),
+    DataField("DumbBlob", 4), # DumbBlob (hardware?)  
+    DataField("StackRva", 4),
     
     DataField("Uknwn", 4), # 2010
     DataField("Uknwn", 4),
@@ -210,8 +210,15 @@ DUMP_0x2000_STRUCT = (
 );
 
 DUMP_STACK64_STRUCT = (
-    DataField("IP", 8),
-    DataField("Return", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Uknwn", 8),
+    DataField("Address", 8),
 );
                                     
 HEADER64_STRUCT = (
@@ -360,35 +367,24 @@ def parse_dump_header_0x2000(arguments, file_dump):
             logger.debug("Loaded modules names at offset {0}".format(hex(strings_offset)))
         if (data_field.name == "StackRva"):
             stack_offset = int(value, 16)
-            stack_offset = 0x400
             logger.debug("Stack frames at offset {0}".format(hex(stack_offset)))
     return (strings_offset, stack_offset)
-
-def parse_stack_frame64(arguments, file_dump):
-    file_dump_cursor = file_dump.tell()
-    for data_field in DUMP_STACK64_STRUCT:
-        (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
-        if (data_field.name == "IP"):
-            ip_address = int(value, 16)
-        if (data_field.name == "Return"):
-            return_address = int(value, 16)
-            
-    return (ip_address, return_address)
-
 
 def parse_stack_frames64(arguments, file_dump, stack_offset):
     file_dump_cursor = file_dump.tell()
     
     file_dump.seek(stack_offset)
-    # End of the strings section is 16 bits zero
-    while (True):
-        (ip_address, return_address) = parse_stack_frame64(arguments, file_dump)
-        logger.info("Stack frame IP={0}, Return={1}".format(hex(ip_address), hex(return_address)));
-        if (ip_address == 0):
-            break
+    
+    stack_addresses = []
+    for data_field in DUMP_STACK64_STRUCT:
+        (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+        if (data_field.name == "Address"):
+            stack_address = int(value, 16)
+            stack_addresses.append(stack_address)
         
         
     file_dump.seek(file_dump_cursor)
+    return stack_addresses
 
 def parse_strings(arguments, file_dump, strings_offset):
     file_dump_cursor = file_dump.tell()
@@ -516,7 +512,8 @@ def parse_dump_header_64(arguments, file_dump):
             elif (data_field.name == "DUMP_0x2000_STRUCT"):
                 strings_offset, stack_offset = parse_dump_header_0x2000(arguments, file_dump)
                 parse_strings(arguments, file_dump, strings_offset)
-                parse_stack_frames64(arguments, file_dump, stack_offset)
+                stack_addresses = parse_stack_frames64(arguments, file_dump, stack_offset)
+                logger.info("Stack: {0}".format(stack_addresses))
             else:
                 parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
     return physical_memory_presents;
