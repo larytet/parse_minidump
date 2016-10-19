@@ -664,7 +664,8 @@ def parse_dump_header_64(arguments, file_dump):
                     logger.debug("Loaded module: name_rva={0}, address={1}, size={2}".format(hex(loaded_module_name_offset), hex(loaded_module_address), hex(loaded_module_size)))
                     loaded_module_name = loaded_modules_names[loaded_module_name_offset]
                     logger.info("{0}:address={1}, size={2}".format(loaded_module_name, hex(loaded_module[1]), loaded_module[2]))
-                logger.info("Stack: {0}".format(stack_addresses))
+                for stack_address in stack_addresses:
+                    logger.info("Stack: {0}".format(hex(stack_address)))
             else:
                 parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
     return physical_memory_presents;
