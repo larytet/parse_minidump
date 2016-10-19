@@ -363,7 +363,7 @@ def parse_dump_header_0x2000(arguments, file_dump):
 def parse_stack_frame64(arguments, file_dump):
     file_dump_cursor = file_dump.tell()
     for data_field in DUMP_STACK64_STRUCT:
-        (value, contains_ascii, value_ascii) = parse_field(file_dump, PHYSICAL_MEMORY_DESCRIPTOR64_STRUCT[0])
+        (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
         if (data_field.name == "IP"):
             ip_address = int(value, 16)
         if (data_field.name == "Return"):
@@ -379,7 +379,7 @@ def parse_stack_frames64(arguments, file_dump, stack_offset):
     # End of the strings section is 16 bits zero
     while (True):
         (ip_address, return_address) = parse_stack_frame64(arguments, file_dump)
-        logger.info("Stack frame IP={0}, Return={return_address}".format(ip_address, return_address));
+        logger.info("Stack frame IP={0}, Return={1}".format(hex(ip_address), hex(return_address)));
         if (ip_address == 0):
             break
         
