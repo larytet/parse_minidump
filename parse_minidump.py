@@ -57,14 +57,17 @@ def open_file(filename, flag):
 def get_mask(bits):
     return (1 << bits) - 1
 
-def data_to_hex(data):
+def data_to_hex(data, max_length=32):
     s = ""
     for b in data:
         s = format(ord(b), 'x') + s
+        max_length = max_length - 1
+        if (max_length == 0):
+            break
         
     return s
 
-def data_to_ascii(data):
+def data_to_ascii(data, max_length=32):
     s = ""
     contains_ascii = False
     for b in data:
@@ -74,6 +77,9 @@ def data_to_ascii(data):
             contains_ascii = True
         else:
             s = s + "."
+        max_length = max_length - 1
+        if (max_length == 0):
+            break
     return (contains_ascii, s)
         
 def get_bits(value, start, bits):
