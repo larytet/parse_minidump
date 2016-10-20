@@ -13,16 +13,15 @@ INFO:parser:Stack: 0xfffff88001127c0bL, \.S.y.s.t.e.m.R.o.o.t.\.s.y.s.t.e.m.3.2.
 INFO:parser:Stack: 0xfffff800026d4f00L, \.S.y.s.t.e.m.R.o.o.t.\.s.y.s.t.e.m.3.2.\.n.t.o.s.k.r.n.l...e.x.e...
 .......................
 ~~~~
-
-~~~~
-Usage:
+   
+  Usage:
     parse_minidump.py parse --filein=FILENAME [--debuglevel=LEVEL] 
 
 
-Options:
+  Options:
     --filein=FILENAME file to convert
     --debuglevel=Debug print level [default: INFO]
 
-Example:
+  Example:
     ./parse_minidump.py parse --filein=100916-24960-01.dmp 
-~~~~
+     
