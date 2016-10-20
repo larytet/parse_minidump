@@ -773,10 +773,10 @@ if __name__ == '__main__':
     is_parse = arguments["parse"]
 
     if is_parse:
+        # The goal is to print the stack frames - address and, if possible, module name 
         (dump_type_64, physical_memory_presents, stack_frames, exception) = parse_dump(arguments)
         
         if (dump_type_64 is not None):
-            # The goal is to print the stack frames - address and, if possible, module name 
             for stack_frame in stack_frames: 
                 if (stack_frame.loaded_module != None):
                     logger.info("Stack: {0}, {1}".format(hex(stack_frame.address), stack_frame.loaded_module.name))
