@@ -766,7 +766,7 @@ if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger('parser')
     debug_level = arguments["--debuglevel"]
-    if (debug_level == "INFO"):
+    if (debug_level == "INFO") or (debug_level == None):
         logger.setLevel(logging.INFO)
     else:
         logger.setLevel(logging.DEBUG)
@@ -786,3 +786,4 @@ if __name__ == '__main__':
             
             if (not physical_memory_presents):
                 logger.info("No physical memory presents in the dump file")
+
