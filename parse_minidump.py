@@ -748,20 +748,11 @@ def parse_dump(arguments):
             break
         
         (dump_type_64, physical_memory_presents, stack_frames) = parse_dump_header(arguments, file_dump)
-        
-        # The goal is to print the stack frames - address and, if possible, module name 
-        for stack_frame in stack_frames: 
-            if (stack_frame.loaded_module != None):
-                logger.info("Stack: {0}, {1}".format(hex(stack_frame.address), stack_frame.loaded_module.name))
-            else:
-                logger.info("Stack: {0}".format(hex(stack_frame.address)))
-    
-            
-        if (not physical_memory_presents):
-            logger.info("No physical memory presents in the dump file")
 
         file_dump.close()
-        break
+        return (dump_type_64, physical_memory_presents, stack_frames)
+    
+    return (None, None, None)
 
 
 if __name__ == '__main__':
@@ -774,4 +765,16 @@ if __name__ == '__main__':
     is_parse = arguments["parse"]
 
     if is_parse:
-        parse_dump(arguments)
+        (dump_type_64, physical_memory_presents, stack_frames) = parse_dump(arguments)
+        
+        if (dump_type_64 is not None):
+            # The goal is to print the stack frames - address and, if possible, module name 
+            for stack_frame in stack_frames: 
+                if (stack_frame.loaded_module != None):
+                    logger.info("Stack: {0}, {1}".format(hex(stack_frame.address), stack_frame.loaded_module.name))
+                else:
+                    logger.info("Stack: {0}".format(hex(stack_frame.address)))
+    
+            
+            if (not physical_memory_presents):
+                logger.info("No physical memory presents in the dump file")
