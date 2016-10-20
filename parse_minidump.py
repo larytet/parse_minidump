@@ -680,7 +680,7 @@ def parse_dump_header_64(arguments, file_dump):
                 physical_memory_presents = parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data_field)
             elif (data_field.name == "Exception"):
                 exception = parse_dump_header_exception_64(arguments, file_dump)
-                logger.info("Exception: code={0}, address={1}, flags={2}".format(hex(exception.code), hex(exception.address), hex(exception.flags)))
+                logger.debug("Exception: code={0}, address={1}, flags={2}".format(hex(exception.code), hex(exception.address), hex(exception.flags)))
             elif (data_field.name == "DUMP_0x2000_STRUCT"):
                 strings_offset, stack_offset, modules_offset = parse_dump_header_0x2000(arguments, file_dump)
                 loaded_modules_names = parse_strings(arguments, file_dump, strings_offset)
@@ -700,7 +700,7 @@ def parse_dump_header_64(arguments, file_dump):
     for stack_address in stack_addresses:
         (module_found, loaded_module) = find_module_by_address(loaded_modules, stack_address)
         stack_frames.append(StackFrame(stack_address, loaded_module))
-    return (physical_memory_presents, stack_frames);
+    return (physical_memory_presents, stack_frames, exception);
                 
     
 def parse_dump_header_32(arguments, file_dump):
@@ -730,14 +730,14 @@ def parse_dump_header(arguments, file_dump):
             if (data_field.name == "ValidDump"):
                 dump_type_64 = (value_ascii == "DU64") 
                 if (dump_type_64):
-                    (physical_memory_presents, stack_frames) = parse_dump_header_64(arguments, file_dump)
+                    (physical_memory_presents, stack_frames, exception) = parse_dump_header_64(arguments, file_dump)
                 else:
                     physical_memory_presents = parse_dump_header_32(arguments, file_dump)
             
                 break
             
             
-    return (dump_type_64, physical_memory_presents, stack_frames)
+    return (dump_type_64, physical_memory_presents, stack_frames, exception)
                  
                     
                 
@@ -751,10 +751,10 @@ def parse_dump(arguments):
             logger.error("Failed to open file '{0}' for reading".format(filename_in))
             break
         
-        (dump_type_64, physical_memory_presents, stack_frames) = parse_dump_header(arguments, file_dump)
+        (dump_type_64, physical_memory_presents, stack_frames, exception) = parse_dump_header(arguments, file_dump)
 
         file_dump.close()
-        return (dump_type_64, physical_memory_presents, stack_frames)
+        return (dump_type_64, physical_memory_presents, stack_frames, exception)
     
     return (None, None, None)
 
@@ -769,7 +769,7 @@ if __name__ == '__main__':
     is_parse = arguments["parse"]
 
     if is_parse:
-        (dump_type_64, physical_memory_presents, stack_frames) = parse_dump(arguments)
+        (dump_type_64, physical_memory_presents, stack_frames, exception) = parse_dump(arguments)
         
         if (dump_type_64 is not None):
             # The goal is to print the stack frames - address and, if possible, module name 
