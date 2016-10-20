@@ -16,11 +16,12 @@ INFO:parser:Stack: 0xfffff800026d4f00L, \.S.y.s.t.e.m.R.o.o.t.\.s.y.s.t.e.m.3.2.
 .......................
 
 Usage:
-    parse_minidump.py parse --filein=FILENAME 
+    parse_minidump.py parse --filein=FILENAME [--debuglevel=LEVEL] 
 
 
 Options:
     --filein=FILENAME file to convert
+    --debuglevel=Debug print level [default: INFO]
 
 Example:
     ./parse_minidump.py parse --filein=100916-24960-01.dmp 
@@ -764,8 +765,11 @@ if __name__ == '__main__':
 
     logging.basicConfig()
     logger = logging.getLogger('parser')
-    logger.setLevel(logging.INFO)
-
+    debug_level = arguments["--debuglevel"]
+    if (debug_level == "INFO"):
+        logger.setLevel(logging.INFO)
+    else:
+        logger.setLevel(logging.DEBUG)
     is_parse = arguments["parse"]
 
     if is_parse:
