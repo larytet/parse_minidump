@@ -664,7 +664,7 @@ class StackFrame:
         self.address, self.loaded_module = address, loaded_module
         
 def parse_dump_header_64(arguments, file_dump):
-    logger.info("64bits dump")
+    logger.debug("64bits dump")
     skip = True
     physical_memory_presents = False
         
@@ -744,7 +744,7 @@ def parse_dump_header(arguments, file_dump):
 
 def parse_dump(arguments):
     filename_in = arguments["--filein"]
-    logger.info("Parse file '{0}'".format(filename_in))
+    logger.debug("Parse file '{0}'".format(filename_in))
     while True:
         (result, file_dump) = open_file(filename_in, 'rb')
         if not result:
