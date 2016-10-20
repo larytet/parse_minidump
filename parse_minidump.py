@@ -655,6 +655,10 @@ def find_module_by_address(loaded_modules, address):
     
     return (False, None)
 
+class StackFrame:
+    def __init__(self, address, loaded_module=None):
+        self.address, self.loaded_module = address, loaded_module
+        
 def parse_dump_header_64(arguments, file_dump):
     logger.info("64bits dump")
     skip = True
@@ -684,18 +688,15 @@ def parse_dump_header_64(arguments, file_dump):
                 
                 for loaded_module in loaded_modules:
                     logger.debug("Loaded module: name_rva={0}, address={1}, size={2}".format(hex(loaded_module.name_offset), hex(loaded_module.address), hex(loaded_module.size)))
-                    loaded_module_name = loaded_modules_names[loaded_module.name_offset]
-                    logger.debug("{0}:address={1}, size={2}".format(loaded_module_name, hex(loaded_module.address), loaded_module.size))
+                    loaded_module.name = loaded_modules_names[loaded_module.name_offset]
+                    logger.debug("{0}:address={1}, size={2}".format(loaded_module.name, hex(loaded_module.address), loaded_module.size))
             else:
                 parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
+    stack_frames = []
     for stack_address in stack_addresses:
         (module_found, loaded_module) = find_module_by_address(loaded_modules, stack_address)
-        if (module_found):
-            loaded_module_name = loaded_modules_names[loaded_module.name_offset]
-            logger.info("Stack: {0}, {1}".format(hex(stack_address), loaded_module_name))
-        else:
-            logger.info("Stack: {0}".format(hex(stack_address)))
-    return physical_memory_presents;
+        stack_frames.append(StackFrame(stack_address, loaded_module))
+    return (physical_memory_presents, stack_frames);
                 
     
 def parse_dump_header_32(arguments, file_dump):
@@ -725,11 +726,18 @@ def parse_dump_header(arguments, file_dump):
             if (data_field.name == "ValidDump"):
                 dump_type_64 = (value_ascii == "DU64") 
                 if (dump_type_64):
-                    physical_memory_presents = parse_dump_header_64(arguments, file_dump)
+                    (physical_memory_presents, stack_frames) = parse_dump_header_64(arguments, file_dump)
                 else:
                     physical_memory_presents = parse_dump_header_32(arguments, file_dump)
             
                 break
+            
+    for stack_frame in stack_frames: 
+        if (stack_frame.loaded_module != None):
+            logger.info("Stack: {0}, {1}".format(hex(stack_frame.address), stack_frame.loaded_module.name))
+        else:
+            logger.info("Stack: {0}".format(hex(stack_frame.address)))
+    
             
     if (not physical_memory_presents):
         logger.info("No physical memory presents in the dump file")
