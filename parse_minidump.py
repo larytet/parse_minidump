@@ -732,6 +732,7 @@ def parse_dump_header(arguments, file_dump):
             
                 break
             
+    # The goal is to print the stack frames - address and, if possible, module name 
     for stack_frame in stack_frames: 
         if (stack_frame.loaded_module != None):
             logger.info("Stack: {0}, {1}".format(hex(stack_frame.address), stack_frame.loaded_module.name))
