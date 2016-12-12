@@ -160,8 +160,6 @@ DUMP_0x1000_STRUCT = (
     DataField("Uknwn", 4),
 
     DataField("Uknwn", 4), 
-    DataField("Uknwn", 4), 
-    DataField("Uknwn", 4), 
     DataField("LoadedModules", 4),
     DataField("Uknwn", 4),
     DataField("StringsRva", 4),
