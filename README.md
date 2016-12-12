@@ -1,6 +1,6 @@
 # parse_minidump
 
-The script parses the Windows BSOD dumpfiles. It handles only files which start with 
+The script parses the Windows BSOD 64 bit Kernel Mini Dump files (minidumps). It handles only files which start with 
 'PAGEDU64' or 'PAGEDUMP'
 Example of output
 ~~~~
