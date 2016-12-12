@@ -279,6 +279,25 @@ DUMP_STACK64_STRUCT = (
     DataField("Uknwn", 8),
     DataField("Address", 8),
 );
+
+DUMP_STACK32_STRUCT = (
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Address", 4),
+);
                                     
 HEADER64_STRUCT = (
     DataField("Signature", 4),
@@ -457,6 +476,21 @@ def parse_dump_header_0x2000(arguments, file_dump):
             logger.debug("Loaded modules at offset {0}".format(hex(modules_offset)))
     return (strings_offset, stack_offset, modules_offset)
 
+def parse_dump_header_0x1000(arguments, file_dump):
+    strings_offset, stack_offset = None, None
+    for data_field in DUMP_0x1000_STRUCT:
+        (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+        if (data_field.name == "StringsRva"):
+            strings_offset = int(value, 16)
+            logger.debug("Loaded modules names at offset {0}".format(hex(strings_offset)))
+        if (data_field.name == "StackRva"):
+            stack_offset = int(value, 16)
+            logger.debug("Stack frames at offset {0}".format(hex(stack_offset)))
+        if (data_field.name == "LoadedModules"):
+            modules_offset = int(value, 16)
+            logger.debug("Loaded modules at offset {0}".format(hex(modules_offset)))
+    return (strings_offset, stack_offset, modules_offset)
+
 def parse_stack_frames64(arguments, file_dump, stack_offset):
     file_dump_cursor = file_dump.tell()
     
@@ -464,6 +498,28 @@ def parse_stack_frames64(arguments, file_dump, stack_offset):
     
     stack_addresses = []
     for data_field in DUMP_STACK64_STRUCT:
+        if (data_field.name == "Address"):
+            while (True):
+                (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+                stack_address = int(value, 16)
+                stack_addresses.append(stack_address)
+                if (stack_address == 0):
+                    break
+        else:
+            (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+
+        
+        
+    file_dump.seek(file_dump_cursor)
+    return stack_addresses
+
+def parse_stack_frames32(arguments, file_dump, stack_offset):
+    file_dump_cursor = file_dump.tell()
+    
+    file_dump.seek(stack_offset)
+    
+    stack_addresses = []
+    for data_field in DUMP_STACK32_STRUCT:
         if (data_field.name == "Address"):
             while (True):
                 (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
@@ -623,12 +679,12 @@ def parse_dump_header_32(arguments, file_dump):
                 exception = parse_dump_header_exception_64(arguments, file_dump)
                 logger.debug("Exception: code={0}, address={1}, flags={2}".format(hex(exception.code), hex(exception.address), hex(exception.flags)))
             elif (data_field.name == "DUMP_0x1000_STRUCT"):
-                strings_offset, stack_offset, modules_offset = parse_dump_header_0x2000(arguments, file_dump)
+                strings_offset, stack_offset, modules_offset = parse_dump_header_0x1000(arguments, file_dump)
                 loaded_modules_names = parse_strings(arguments, file_dump, strings_offset)
                 for loaded_modules_offset in loaded_modules_names:
                     loaded_modules_name = loaded_modules_names[loaded_modules_offset]
                     logger.debug("Module: {0}:{1}".format(hex(loaded_modules_offset), loaded_modules_name))
-                stack_addresses = parse_stack_frames64(arguments, file_dump, stack_offset)
+                stack_addresses = parse_stack_frames32(arguments, file_dump, stack_offset)
                 loaded_modules = parse_modules(arguments, file_dump, modules_offset)
                 
                 for loaded_module in loaded_modules:
