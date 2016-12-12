@@ -132,28 +132,82 @@ PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT = (
     DataField("Run", 256, PHYSICAL_MEMORY_RUN32_STRUCT)
 );
 
+# from file wdm.h
+EXCEPTION_MAXIMUM_PARAMETERS = 15 # maximum number of exception parameters
+
+EXCEPTION_RECORD32_STRUCT = (
+    DataField("ExceptionCode", 4),
+    DataField("ExceptionFlags", 4),
+    DataField("ExceptionRecord", 4),
+    DataField("ExceptionAddress", 4),
+    DataField("NumberParameters", 4),
+    DataField("ExceptionInformation", 4*EXCEPTION_MAXIMUM_PARAMETERS)
+);
+
+DUMP_0x1000_STRUCT = (
+    DataField("Uknwn", 4),  # 1000
+    DataField("DumbBlob", 4), # DumbBlob (hardware?)  
+    DataField("Uknwn", 4),
+    
+    DataField("StackRva", 4), 
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+
+    DataField("Uknwn", 4), 
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+    DataField("Uknwn", 4),
+
+    DataField("Uknwn", 4), 
+    DataField("Uknwn", 4), 
+    DataField("Uknwn", 4), 
+    DataField("LoadedModules", 4),
+    DataField("Uknwn", 4),
+    DataField("StringsRva", 4),
+);
+
+
      
 HEADER32_STRUCT = (
     DataField("Signature", 4),
     DataField("ValidDump", 4),
     DataField("MajorVersion", 4),
     DataField("MinorVersion", 4),
-    DataField("DirectoryTableBase", 4),
-    DataField("PfnDataBase", 4), 
-    DataField("PsLoadedModuleList", 4),
-    DataField("PsActiveProcessHead", 4),
-    DataField("MachineImageType", 4),
-    DataField("NumberProcessors", 4),
-    DataField("BugCheckCode", 4),
-    DataField("BugCheckParameter", 16),
-    DataField("VersionUser", 32),
-    DataField("PaeEnabled", 1),
+    DataField("DirectoryTableBase", 4),  # 00185000
+    DataField("PfnDataBase", 4),         # 82977838
+    DataField("PsLoadedModuleList", 4),  # 82956e30
+    DataField("PsActiveProcessHead", 4), # 8294f4f0
+    DataField("PsActiveProcessHead", 4), # 828a014c 
+    DataField("MachineImageType", 4),    # 00000100
+    DataField("NumberProcessors", 4),    # 1000007e
+    DataField("BugCheckCode", 4),        # c0000005 
+    DataField("Skip", 4),
+    DataField("Skip", 4),
+    DataField("Skip", 0x320-0x38),
+    DataField("BugCheckParameter", 4*4),
+    DataField("Skip", 0x20),
+    DataField("KdDebuggerDataBlock", 4),
+    DataField("PhysicalMemoryBlockBuffer", 0x2C0, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT),
+    DataField("ContextRecord", 3000-0x68),
+    DataField("Exception", 0x98, EXCEPTION_RECORD32_STRUCT),
+    DataField("DumpType", 8),
+    DataField("RequiredDumpSpace", 8),
+    DataField("SystemTime", 8),
+    DataField("Comment", 128),
+    DataField("SystemUpTime", 8),
+    DataField("MiniDumpFields", 4),
+    DataField("SecondaryDataState", 4),
+    DataField("ProductType", 4),
+    DataField("WriterStatus", 4),
+    DataField("Unused1", 1),
     DataField("KdSecondaryVersion", 1),
-    DataField("Spare", 32),
-    DataField("KdDebuggerDataBlock", 32),
-    DataField("PhysicalMemoryBlock", 256, PHYSICAL_MEMORY_DESCRIPTOR32_STRUCT)
-    # size is 0x1000 bytes
+    DataField("Unused2", 2),
+    # Offset  0x1000  
+    DataField("DUMP_0x1000_STRUCT", 4, DUMP_0x1000_STRUCT),
 );
+
+
 
 PHYSICAL_MEMORY_RUN64_STRUCT = (
     DataField("BasePage", 8),
@@ -177,17 +231,6 @@ MINIDUMP_HEADER_STRUCT = (
 );
 
 
-# from file wdm.h
-EXCEPTION_MAXIMUM_PARAMETERS = 15 # maximum number of exception parameters
-
-EXCEPTION_RECORD32_STRUCT = (
-    DataField("ExceptionCode", 4),
-    DataField("ExceptionFlags", 4),
-    DataField("ExceptionRecord", 4),
-    DataField("ExceptionAddress", 4),
-    DataField("NumberParameters", 4),
-    DataField("ExceptionInformation", 4*EXCEPTION_MAXIMUM_PARAMETERS)
-);
 
 EXCEPTION_RECORD64_STRUCT = (
     DataField("ExceptionCode", 4),
@@ -564,9 +607,11 @@ def parse_dump_header_64(arguments, file_dump):
                 
     
 def parse_dump_header_32(arguments, file_dump):
-    logger.info("32bits dump")
+    logger.debug("32bits dump")
     skip = True
-    for data_field in HEADER64_STRUCT:
+    physical_memory_presents = False
+        
+    for data_field in HEADER32_STRUCT:
         if (data_field.name == "MajorVersion"):
             skip = False
         if skip:
@@ -574,8 +619,31 @@ def parse_dump_header_32(arguments, file_dump):
         if (not data_field.is_struct):
             (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
         else:
-            if (data_field.name == "PhysicalMemoryBlock"):
-                parse_dump_header_physical_blocks_32(arguments, file_dump)
+            if (data_field.name == "PhysicalMemoryBlockBuffer"):
+                physical_memory_presents = parse_dump_header_physical_memory_block_buffer_64(arguments, file_dump, data_field)
+            elif (data_field.name == "Exception"):
+                exception = parse_dump_header_exception_64(arguments, file_dump)
+                logger.debug("Exception: code={0}, address={1}, flags={2}".format(hex(exception.code), hex(exception.address), hex(exception.flags)))
+            elif (data_field.name == "DUMP_0x2000_STRUCT"):
+                strings_offset, stack_offset, modules_offset = parse_dump_header_0x2000(arguments, file_dump)
+                loaded_modules_names = parse_strings(arguments, file_dump, strings_offset)
+                for loaded_modules_offset in loaded_modules_names:
+                    loaded_modules_name = loaded_modules_names[loaded_modules_offset]
+                    logger.debug("Module: {0}:{1}".format(hex(loaded_modules_offset), loaded_modules_name))
+                stack_addresses = parse_stack_frames64(arguments, file_dump, stack_offset)
+                loaded_modules = parse_modules(arguments, file_dump, modules_offset)
+                
+                for loaded_module in loaded_modules:
+                    logger.debug("Loaded module: name_rva={0}, address={1}, size={2}".format(hex(loaded_module.name_offset), hex(loaded_module.address), hex(loaded_module.size)))
+                    loaded_module.name = loaded_modules_names[loaded_module.name_offset]
+                    logger.debug("{0}:address={1}, size={2}".format(loaded_module.name, hex(loaded_module.address), loaded_module.size))
+            else:
+                parse_dump_header_generic_struct(arguments, file_dump, data_field.data_struct)
+    stack_frames = []
+    for stack_address in stack_addresses:
+        (module_found, loaded_module) = find_module_by_address(loaded_modules, stack_address)
+        stack_frames.append(StackFrame(stack_address, loaded_module))
+    return (physical_memory_presents, stack_frames, exception);
 
 
 def parse_dump_header(arguments, file_dump):
@@ -592,7 +660,7 @@ def parse_dump_header(arguments, file_dump):
                 if (dump_type_64):
                     (physical_memory_presents, stack_frames, exception) = parse_dump_header_64(arguments, file_dump)
                 else:
-                    physical_memory_presents = parse_dump_header_32(arguments, file_dump)
+                    (physical_memory_presents, stack_frames, exception) = parse_dump_header_32(arguments, file_dump)
             
                 break
             
