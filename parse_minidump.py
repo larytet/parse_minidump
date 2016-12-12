@@ -356,6 +356,16 @@ LOADED_MODULE64_STRUCT = (
     DataField("Uknwn", 16),
 );
 
+LOADED_MODULE32_STRUCT = (
+    DataField("Path", 4),
+    DataField("Skip", 12*2),
+    DataField("BaseAddress", 4),
+    DataField("Uknwn", 4),
+    DataField("Size", 4),
+    DataField("Skip", 14*2),
+    DataField("Uknwn", 4*2),
+);
+
 VS_FIXEDFILEINFO_STRUCT = (
     DataField("dwSignature", 4),
     DataField("dwStrucVersion", 4),
@@ -581,6 +591,18 @@ def parse_module(arguments, file_dump):
             
     return (module_name_offset, module_address, module_size)
     
+def parse_module32(arguments, file_dump):
+    module_name_offset, module_address, module_size = None, None, None
+    for data_field in LOADED_MODULE32_STRUCT:
+        (value, contains_ascii, value_ascii) = parse_field(file_dump, data_field)
+        if (data_field.name == "Path"):
+            module_name_offset = int(value, 16)
+        if (data_field.name == "BaseAddress"):
+            module_address = int(value, 16)
+        if (data_field.name == "Size"):
+            module_size = int(value, 16)
+            
+    return (module_name_offset, module_address, module_size)
             
 class LoadedModule:
     def __init__(self, name_offset, address, size):
@@ -595,6 +617,24 @@ def parse_modules(arguments, file_dump, modules_offset_base):
     modules = []
     while (True):
         (name_offset, address, size) = parse_module(arguments, file_dump)
+        if (name_offset >= 0xFFFF):
+            break
+        if (name_offset <= modules_offset_base):
+            break
+        modules.append(LoadedModule(name_offset, address, size))
+        
+    file_dump.seek(file_dump_cursor)
+ 
+    return modules
+
+def parse_modules32(arguments, file_dump, modules_offset_base):
+    
+    file_dump_cursor = file_dump.tell()
+    
+    file_dump.seek(modules_offset_base)
+    modules = []
+    while (True):
+        (name_offset, address, size) = parse_module32(arguments, file_dump)
         if (name_offset >= 0xFFFF):
             break
         if (name_offset <= modules_offset_base):
@@ -685,7 +725,7 @@ def parse_dump_header_32(arguments, file_dump):
                     loaded_modules_name = loaded_modules_names[loaded_modules_offset]
                     logger.debug("Module: {0}:{1}".format(hex(loaded_modules_offset), loaded_modules_name))
                 stack_addresses = parse_stack_frames32(arguments, file_dump, stack_offset)
-                loaded_modules = parse_modules(arguments, file_dump, modules_offset)
+                loaded_modules = parse_modules32(arguments, file_dump, modules_offset)
                 
                 for loaded_module in loaded_modules:
                     logger.debug("Loaded module: name_rva={0}, address={1}, size={2}".format(hex(loaded_module.name_offset), hex(loaded_module.address), hex(loaded_module.size)))
