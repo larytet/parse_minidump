@@ -622,7 +622,7 @@ def parse_dump_header_32(arguments, file_dump):
             elif (data_field.name == "Exception"):
                 exception = parse_dump_header_exception_64(arguments, file_dump)
                 logger.debug("Exception: code={0}, address={1}, flags={2}".format(hex(exception.code), hex(exception.address), hex(exception.flags)))
-            elif (data_field.name == "DUMP_0x2000_STRUCT"):
+            elif (data_field.name == "DUMP_0x1000_STRUCT"):
                 strings_offset, stack_offset, modules_offset = parse_dump_header_0x2000(arguments, file_dump)
                 loaded_modules_names = parse_strings(arguments, file_dump, strings_offset)
                 for loaded_modules_offset in loaded_modules_names:
